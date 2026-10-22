@@ -1,0 +1,26 @@
+name: Bug report
+description: Report a reproducible console or packaging problem.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: Use synthetic data. Report secrets or sensitive findings through SECURITY.md.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser, Node version, and release or commit.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Page, steps, expected behavior, and actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Relevant evidence
+      description: Add a redacted screenshot or minimal output. No personal memory exports.

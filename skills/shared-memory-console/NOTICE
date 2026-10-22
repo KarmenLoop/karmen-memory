@@ -1,0 +1,14 @@
+KARMEN Memory
+Copyright 2026 KarmenLoop
+
+First-party source, documentation, screenshots, and the shared-memory-console
+skill are distributed under the Apache License, Version 2.0.
+
+React and React DOM are distributed under the MIT License.
+Lucide is distributed under the ISC License, with Feather portions retaining
+their stated MIT attribution. Manrope is distributed under the SIL Open Font
+License, Version 1.1. Their notices are preserved in LICENSES/.
+
+Koder and Koder CLI are KarmenLoop project names. Other tool names identify
+intended integrations and remain the property of their respective owners.
+No third-party endorsement or verified integration is implied.

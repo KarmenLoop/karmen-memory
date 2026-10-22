@@ -1,0 +1,18 @@
+name: Feature request
+description: Describe a concrete memory-management problem.
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: What task is difficult, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+      description: Include the page, important states, and any service assumptions.
+    validations:
+      required: true
