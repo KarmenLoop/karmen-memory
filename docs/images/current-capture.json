@@ -1,0 +1,20 @@
+{
+  "version": "0.1.1",
+  "kind": "actual browser viewport capture",
+  "data": "synthetic example",
+  "image": "docs/images/overview-desktop-v0.1.1.png",
+  "sha256": "ea491b7075b7ef538af38dfd26a31f4f8fa6ed9d53e5bb179971d166f14dc6bb",
+  "pixels": [
+    65536,
+    4292542531
+  ],
+  "edits": "none",
+  "source_files": {
+    "package-lock.json": "7af1d13ba30657c4cc314b088fe92733573c9b6fb0f77b14b8da1b9aca50e5fd",
+    "package.json": "68591b7fcaa92b379101712b27f638eba983bd8a4ec87c19a82ad6cb6070d53e",
+    "src/data.js": "349844c407e4bff9920f0af392c1e61be1ee851b8c48471bddb1aee31bc70478",
+    "src/main.jsx": "88cf3ee84e44d14a5ac2c862445cfe0101e18965d0b2b597e7be26d571b8dbf9",
+    "src/style.css": "363f516a918290964acc72f13b76f3842e5915a1fdf44554a7045950b7b26320",
+    "src/workbench.css": "1514082d38a62d6d79cbb26934d8aaf58dbad7f0606e096c7ad833a821688d21"
+  }
+}

@@ -51,6 +51,8 @@ def main():
     preview_entries.extend((path, prefix + path.relative_to(ROOT).as_posix())
                            for path in (ROOT / 'LICENSES').glob('*') if path.is_file())
     preview_entries.append((ROOT / 'docs/preview.md', prefix + 'PREVIEW.md'))
+    for name in ['README.md', 'README.zh-CN.md', 'docs/tutorial.en.md', 'docs/tutorial.zh-CN.md', 'docs/images/overview-desktop-v0.1.1.png', 'docs/images/current-capture.json']:
+        preview_entries.append((ROOT / name, prefix + name))
     preview = target / f'karmen-memory-{version}-preview.zip'
     add_files(preview, preview_entries)
 
