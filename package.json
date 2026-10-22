@@ -1,6 +1,6 @@
 {
   "name": "@karmenloop/karmen-memory",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "An interactive console prototype for reviewing shared personal memory across Koder, Koder CLI, Cursor, and other agent tools.",

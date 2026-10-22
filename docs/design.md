@@ -24,4 +24,6 @@ The light gray-white and moss-green palette is shared across pages. Larger headi
 
 Dialogs use the native dialog element. Forms have visible labels, errors appear near the relevant operation, and writes produce status feedback. Reduced-motion preferences disable animation. These choices are not a complete accessibility certification.
 
-![Narrow-screen overview](images/overview-mobile.png)
+![Recorded v0.1.0 narrow-screen overview](images/overview-mobile.png)
+
+*Historical v0.1.0 browser capture. The [current v0.1.1 project page](../README.md) uses a newly captured image.*

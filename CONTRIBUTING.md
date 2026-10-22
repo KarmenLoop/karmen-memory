@@ -20,8 +20,12 @@ For an interface change, check the actual task and the desktop and narrow-screen
 
 Describe the concrete problem, changed behavior, and checks you ran. Include a screenshot when it helps assess an interface change. Report remaining integration or platform limits separately from local results.
 
-Keep changes focused. Use natural, concrete US English in commit messages, the repository description, and the README. The demonstration interface is currently Chinese; a new localization should identify which language was actually checked.
+Keep changes focused. Use natural, concrete US English commit messages. Keep English and Simplified Chinese README and guide counterparts aligned; describe verified capabilities in repository metadata. The demonstration interface is currently Chinese; a new localization should identify which language was actually checked.
 
 Never attach credentials, private conversations, browser storage exports containing personal information, or raw support logs. Report sensitive findings through [SECURITY.md](SECURITY.md).
 
 Contributions are offered under this repository's Apache License 2.0. Follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## Documentation and release changes
+
+Keep the English and Simplified Chinese entry pages and guides aligned. Explain the reader’s actual task with project-specific examples. Use concrete English commit subjects. New ordinary filenames and versioned release assets use lowercase kebab-case without spaces; conventional README, LICENSE, SKILL and metadata names remain unchanged. Before release, compare each package, version label, command, and current image with the documented behavior. Label diagrams, synthetic data, historical evidence, and unverified integrations accurately.
