@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { backup } from "node:sqlite";
 import { Store, fail, hash } from "./store.mjs";
+import {replication} from "./replication.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OWNER = { name: "控制台", permission: "readwrite", project: "*" };
@@ -45,6 +46,7 @@ export async function createService(options = {}) {
   mkdirSync(dataDir, { recursive: true, mode: 0o700 });
   chmodSync(dataDir, 0o700);
   const store = new Store(join(dataDir, "memory.sqlite"));
+  const replicas = replication(store, dataDir);
   const sessions = new Map(),
     rates = new Map();
   const devPort = options.devPort || process.env.KARMEN_MEMORY_DEV_PORT;
@@ -246,7 +248,7 @@ export async function createService(options = {}) {
       if (remote && !path.startsWith("/v1/")) fail(404, "接口不存在");
       if (req.method === "GET" && path === "/health" && !remote) {
         trusted(req);
-        return send(res, 200, { status: "ok", version: "0.2.0" });
+        return send(res, 200, { status: "ok", version: "0.3.0" });
       }
       if (path.startsWith("/api/")) {
         if (remote) fail(403, "控制台仅允许本机访问");
@@ -266,6 +268,7 @@ export async function createService(options = {}) {
         actor = OWNER;
         const input = req.method === "GET" ? null : await body(req);
         let result;
+        if (path.startsWith("/api/replication")) return send(res, 200, await replicas.local(path, req.method, input));
         if (path === "/api/state" && req.method === "GET") {
           const state = store.state();
           result = {
@@ -275,7 +278,7 @@ export async function createService(options = {}) {
               ...state.service,
               hostname: hostname(),
               platform: process.platform,
-              version: "0.2.0",
+              version: "0.3.0",
               node: process.execPath,
               mcpPath: join(ROOT, "bin/mcp.mjs"),
               cliPath: join(ROOT, "bin/memory.mjs"),
@@ -389,6 +392,12 @@ export async function createService(options = {}) {
         else fail(404, "接口不存在", "NOT_FOUND");
         return send(res, req.method === "POST" ? 201 : 200, result);
       }
+      if (path.startsWith("/v1/replica/")) {
+        if(req.headers.origin) fail(403,"Replication does not accept browser origins");
+        rate(`replica:${req.socket.remoteAddress}`,240);
+        const input=req.method==="GET"?Object.fromEntries(new URL(req.url,"http://local.invalid").searchParams):await body(req);
+        return send(res,200,await replicas.remote(path,req.method,input,req.headers,remote));
+      }
       if (path.startsWith("/v1/")) {
         if (req.headers.origin)
           fail(403, "工具 API 不接受浏览器 Origin", "INVALID_ORIGIN");
@@ -432,7 +441,7 @@ export async function createService(options = {}) {
             project: actor.project,
             permission: actor.permission,
             storage: "SQLite",
-            version: "0.2.0",
+            version: "0.3.0",
           };
         else if (req.method === "POST") {
           const input = await body(req);
@@ -536,11 +545,13 @@ export async function createService(options = {}) {
   }
   return {
     store,
+    replicas,
     server,
     port,
     dataDir,
     lanInfo,
     close: async () => {
+      await replicas.close();
       await toggleLan(false);
       await new Promise((resolve) => {
         server.close(resolve);

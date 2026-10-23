@@ -67,7 +67,11 @@ def main():
         'sqliteService': True,
         'authenticatedHttpsSharing': True,
         'nativeHostAcceptance': False,
-        'lanSynchronization': False,
+        'lanSynchronization': True,
+        'physicalTwoDeviceAcceptance': False,
+        'codexModelCalls': True,
+        'cursorToolDiscovery': True,
+        'cursorModelConversation': False,
     }, indent=2) + '\n')
     print(json.dumps({'version': version, 'commit': commit,
                       'artifacts': [path.name for path in artifacts],

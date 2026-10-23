@@ -1,3 +1,7 @@
+# v0.3.0 acceptance extension
+
+The existing v0.2.0 acceptance record below is retained. New checks exercise offline replicas, same-database transactions, scoped transfer, conflicts, deletion versus stale edits, credential revocation, and service restart. See [replica setup and scope](replication.en.md). Physical two-device and Cursor model conversation acceptance remain outstanding.
+
 # Validation record
 
 ## 0.2.0 local service alpha — October 23, 2026

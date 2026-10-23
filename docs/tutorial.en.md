@@ -1,8 +1,9 @@
 # KARMEN Memory user guide
 
+**v0.3.0** · [Offline replica setup / 离线副本设置](replication.en.md) · [中文](replication.zh-CN.md)
 English | [简体中文](tutorial.zh-CN.md) · [Project](../README.md)
 
-This guide matches **v0.2.0**, the local service alpha. The interface is Chinese; the documentation is bilingual.
+This guide matches **v0.3.0**, the local service alpha. The interface is Chinese; the documentation is bilingual.
 
 ## Download and start
 
@@ -24,7 +25,7 @@ The [integration guide](integration.md) includes the MCP stdio template and HTTP
 
 ## Pair a computer
 
-Enable HTTPS sharing, copy the public certificate through a trusted channel, compare its fingerprint, then generate a one-use five-minute code. Run the pairing command shown in the console with `--ca FILE` on the other computer. A profile is saved privately; an existing profile is never overwritten. Only shared facts in the granted project are visible. Revocation applies on the next request. Closing sharing or clean shutdown stops the listener. The primary node must remain available; there is no offline replica.
+Enable HTTPS sharing, copy the public certificate through a trusted channel, compare its fingerprint, then generate a one-use five-minute code. Run the pairing command shown in the console with `--ca FILE` on the other computer. A profile is saved privately; an existing profile is never overwritten. Only shared facts in the granted project are visible. Revocation applies on the next request. Closing sharing or clean shutdown stops the listener. This remote-search mode needs the primary online; configure offline replicas separately using the linked v0.3.0 guide.
 
 ## Backup, updates, and troubleshooting
 
