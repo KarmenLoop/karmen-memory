@@ -1,12 +1,13 @@
 # KARMEN Memory
 
+**v0.3.0** · [Offline replica setup / 离线副本设置](docs/replication.en.md) · [中文](docs/replication.zh-CN.md)
 [English](README.md) | 简体中文
 
-本地 SQLite 记忆服务与管理后台，让多个 Agent 工具使用同一份经过确认的个人上下文。当前版本 **v0.2.0**，处于本地 Alpha 阶段。
+本地 SQLite 记忆服务与管理后台，让多个 Agent 工具使用同一份经过确认的个人上下文。当前版本 **v0.3.0**，处于本地 Alpha 阶段。
 
 [使用指南](docs/tutorial.zh-CN.md) · [接入说明](docs/integration.md) · [验收记录](docs/validation.md) · [下载](https://github.com/KarmenLoop/karmen-memory/releases)
 
-![使用真实数据库的管理后台](docs/images/overview-desktop.png)
+![使用真实数据库的管理后台](docs/images/overview-desktop-v0.3.0.png)
 
 截图中的合成记录由验收人员通过真实表单创建。新安装不会预填记忆、连接、调用记录或节省比例。Koder、Koder CLI、Cursor 始终排在前面。
 
@@ -58,7 +59,7 @@ node bin/memory.mjs pair --url https://HOST_IP:4319 \
   --ca ./karmen-memory-ca.pem --code PAIRING_CODE --name "My second computer"
 ```
 
-只共享“全设备”范围内、项目获准的事实。关闭共享会关掉监听端口；撤销凭证后下次请求被拒绝。正常退出服务也会关闭共享。这是访问主节点，不是离线数据库复制；主节点离线时远端不能检索。
+只共享“全设备”范围内、项目获准的事实。关闭共享会关掉监听端口；撤销凭证后下次请求被拒绝。正常退出服务也会关闭共享。原有模式访问主节点，主节点离线时远端不能检索；新离线副本模式按上方教程单独配置。
 
 ## 技能、数据与限制
 
@@ -66,6 +67,6 @@ node bin/memory.mjs pair --url https://HOST_IP:4319 \
 
 数据库保存事实、依据、候选、修订、审计、评估和凭证哈希，不会自动读取聊天历史或调用付费模型。操作系统用户是本地信任边界；应用未实现静态加密，请使用系统磁盘保护。SQLite 快照包含私人数据与凭证哈希，需要妥善保管。JSON 导出不包含凭证。旧浏览器原型数据需要显式检查后导入。
 
-本机真实数据库、HTTP 权限、独立 CLI/MCP、TLS 配对与进程重启已有运行检查。原生 Koder/Koder CLI/Cursor 等宿主接入、两台实体电脑互通、Windows 运行、Mac 安装包、离线复制、向量语义检索、模型提炼和成本收益仍需各自实现或验收。目前没有跨工具准确率或节省 1/3 的实测结论。
+本机真实数据库、HTTP 权限、独立 CLI/MCP、TLS 配对与进程重启已有运行检查。原生 Koder/Koder CLI/Cursor 等宿主接入、两台实体电脑互通、Windows 运行、Mac 安装包、向量语义检索、模型提炼和成本收益仍需各自实现或验收。目前没有跨工具准确率或节省 1/3 的实测结论。
 
 [贡献](CONTRIBUTING.md) · [安全](SECURITY.md) · [Apache-2.0](LICENSE) · [NOTICE](NOTICE) · [第三方许可](THIRD_PARTY_NOTICES.md)

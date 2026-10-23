@@ -1,22 +1,61 @@
 {
-  "version": "0.2.0",
-  "kind": "actual service-backed browser capture",
-  "data": "synthetic acceptance records created through the UI",
-  "image": "docs/images/overview-desktop.png",
-  "sha256": "f9bd4a6c39bfc695d9a576466ede97231828c528d02b17870fde18a60da58011",
-  "pixels": [
-    65536,
-    4292542531
-  ],
+  "version": "0.3.0",
+  "kind": "actual browser captures from the current service",
+  "data": "acceptance records created by actual owner and MCP calls; no production user data",
   "edits": "none",
+  "images": [
+    {
+      "file": "docs/images/overview-desktop-v0.3.0.png",
+      "sha256": "798478b366304120c344f9f86f50768be85e92dfd7156f9ab6bc2cdba5ce2ba5",
+      "pixels": [
+        65536,
+        4292542531
+      ]
+    },
+    {
+      "file": "docs/images/overview-mobile-v0.3.0.png",
+      "sha256": "fa71e217c31867997c52349c6d45bf797ade7e8fda1bc566148921ef87b00bce",
+      "pixels": [
+        65536,
+        4292542531
+      ]
+    },
+    {
+      "file": "docs/images/replicas-desktop-v0.3.0.png",
+      "sha256": "f06faef954da4ee399de76f24eb1f4d130f87ea332609d5e24a0b5545181aa68",
+      "pixels": [
+        65536,
+        4292542531
+      ]
+    },
+    {
+      "file": "docs/images/replicas-mobile-v0.3.0.png",
+      "sha256": "1b0e747d541bb707b1df785789d244f7f2f30f4de5fcaf6e9788a7b44323fc7a",
+      "pixels": [
+        65536,
+        4292542531
+      ]
+    }
+  ],
   "source_files": {
-    "package.json": "761405dea4d0ab83a317adde7e22bb6d26fa0ffa5cff1d9680f5f31577262b7e",
-    "package-lock.json": "0019e418b18b00aa71b152009fb566cebd99b19ab128ef7cca9af25bbc926ee9",
-    "src/main.jsx": "7fd2769d1fac903e68105b826d304acefb02d5ee3894384208272545277d6b92",
+    "src/service.css": "3b290834f2adce2461d01ea029bb2debc574197966cb5b36a609bd45ab765352",
+    "src/Replication.jsx": "c2993f8a460d7c910313f78fc9dab386b555002a07ea30b40fd08ab88b707e85",
     "src/catalog.js": "f671aab00eca02eb63e38722c0360272cccb334e8f5118d1354f2e3187c93ca5",
-    "src/api.js": "02d5e135ae7efe35b90b89a323136de7678491faae526de1625b7b9d172032f2",
+    "src/main.jsx": "2af7b7e24978166bcc45cc2a377aa872da688e8a7b17a7e43fda4d5389f589ea",
     "src/style.css": "363f516a918290964acc72f13b76f3842e5915a1fdf44554a7045950b7b26320",
+    "src/api.js": "02d5e135ae7efe35b90b89a323136de7678491faae526de1625b7b9d172032f2",
+    "src/replication.css": "7f78913ea05cfc434b167b1578ad02fbdd0e625b133f19a221f574fb6771b9d3",
     "src/workbench.css": "1514082d38a62d6d79cbb26934d8aaf58dbad7f0606e096c7ad833a821688d21",
-    "src/service.css": "3b290834f2adce2461d01ea029bb2debc574197966cb5b36a609bd45ab765352"
+    "server/replication.mjs": "3cec698d5f6be7d52b229f7ffb999e1b18264e78b1028c1b4fa4f7749ceb8df0",
+    "server/store.mjs": "8d267786db3064ecd8149429bf127b0085c26e8b8f274c2bf7ba6c5c9edaed60",
+    "server/replica-store.mjs": "eb4b484288e1bba5cbf1de84bad1738b3fe599d831b02483845f3d88041f925c",
+    "server/sync-client.mjs": "e329b97874d18ae2cd1af06f27915535df268d62a443f1c3286b78a421777b92",
+    "server/http.mjs": "f1d153403f1e379b191c604db9002ecba573967bfb0e7378bf688ddb79c3519d",
+    "bin/install-host.mjs": "18a4d2870bda42c568e496cf0b83f6ce3f1dbe7952a4078a7961e1f761758194",
+    "bin/mcp.mjs": "1b93734a33b9ee413027df3085f070026a46ce6ffc80c5af0fbf01d43b3db46f",
+    "bin/memory.mjs": "4ac5aa25f7eaba8f3dfd4251d2cc99a4aba60ad5cc55dfb1115a9b19a41ae1ad",
+    "bin/client.mjs": "718b32b8bf6b2b415ae63d8b4773a4bfd85321bec218164bf9a9773a16d9e188",
+    "package.json": "0f8fa5eb0ea99c2c49d8470a3c687f515a3f6cac46c294c505957aa553438094",
+    "package-lock.json": "3329ffd8978fa34efb8a53017abc34f0cdb362e43e794ab96d897b1991917300"
   }
 }

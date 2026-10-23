@@ -33,4 +33,4 @@ JSON import is additive and is not an exact full-database restore. Moving an old
 
 ## Offline behavior and limits
 
-Local facts, lexical retrieval, rule extraction, review, and backup work without internet access. LAN clients need the primary service available; this release has no offline replica. No model or paid API is called. Native installed-host behavior, physical-device LAN use, Mac packaging, Windows runtime, semantic accuracy, and token savings require separate validation.
+Local facts, lexical retrieval, rule extraction, review, and backup work without internet access. LAN clients need the primary service available; v0.3.0 adds separately paired offline replicas; see [replica setup](replication.en.md). No model or paid API is called. Native installed-host behavior, physical-device LAN use, Mac packaging, Windows runtime, semantic accuracy, and token savings require separate validation.

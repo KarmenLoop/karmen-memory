@@ -1,6 +1,6 @@
 # Release guide
 
-Version 0.2.0 is a local service alpha. Preserve v0.1.0 as the historical prototype.
+Version 0.3.0 is a local service alpha. Preserve v0.1.0 as the historical prototype.
 
 From a clean committed checkout with Node 22.16+, npm, OpenSSL, Python 3, and Git:
 

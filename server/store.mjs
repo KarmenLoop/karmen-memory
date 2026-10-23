@@ -191,6 +191,7 @@ export class Store {
   update(key, value, actor = { name: "控制台" }) {
     return this.tx(() => {
       const old = this.one("facts", key);
+      this.replicationGuard?.(old,value);
       if (value.revision !== old.revision)
         fail(409, "记忆已被其他窗口更新，请刷新后重试", "REVISION_CONFLICT");
       const row = {
@@ -421,6 +422,7 @@ export class Store {
             old.status !== "active"
           )
             fail(409, "被替换记忆的项目、版本或状态已变化");
+          this.replicationGuard?.(old, {status:"archived"});
           const archived = {
             ...old,
             status: "archived",

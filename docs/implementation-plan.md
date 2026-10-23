@@ -1,3 +1,5 @@
+> Historical v0.2.0 plan, retained for provenance. v0.3.0 adds [offline replicas](replication.en.md).
+
 # Local memory service implementation
 
 ## Scope and decisions

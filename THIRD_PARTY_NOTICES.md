@@ -12,3 +12,7 @@ The application installs its dependencies through npm. These packages keep their
 Vite and its build dependencies are installed for development and compilation. Their package distributions include their own notices. The lockfile records the exact dependency graph used for installation.
 
 Tool names and interface references identify proposed integration targets. This repository contains no third-party agent runtime, account credentials, or proprietary adapter source.
+
+| smol-toml | Workspace TOML validation | [MIT](LICENSES/smol-toml-MIT.txt). |
+
+The MCP SDK is a development dependency used for protocol acceptance. See [its MIT license](LICENSES/mcp-sdk-MIT.txt).

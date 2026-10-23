@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import Replication from "./Replication";
+import "./replication.css";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -882,7 +884,7 @@ function App() {
               />
               <kbd>⌘ K</kbd>
             </label>
-            <span className="demo-label">本地服务 0.2</span>
+            <span className="demo-label">本地服务 0.3</span>
             <button
               className="icon-btn notifications"
               aria-label={`通知：${candidates.length} 条待审核`}
@@ -1647,12 +1649,12 @@ function App() {
               <div className="info-banner">
                 <ShieldCheck size={19} />
                 <p>
-                  这是主节点共享访问。主节点离线时，其他电脑无法检索；尚未实现离线副本同步。API
-                  密钥和执行授权不随记忆共享。
+                  上方是主节点共享访问；主节点离线时远端客户端无法检索。下方可单独设置离线副本。API 密钥和执行授权不随记忆同步。
                 </p>
               </div>
             </>
           )}
+          {view === "devices" && <Replication />}
           {view === "activity" && (
             <>
               {pageHeader(
@@ -1961,7 +1963,7 @@ function App() {
                   使用边界
                 </h2>
                 <p>
-                  提炼采用本地句子规则，检索采用词项排序。联网模型、向量索引、宿主原生集成、离线副本同步与桌面安装包尚需单独实现及验收。
+                  提炼采用本地句子规则，检索采用词项排序。联网模型、向量索引、各宿主模型回合与桌面安装包需单独验收；离线副本在局域网页配置，物理双机仍待验收。
                 </p>
                 <button
                   className="text-link"

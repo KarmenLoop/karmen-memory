@@ -1,5 +1,6 @@
 # KARMEN Memory
 
+**v0.3.0** · [Offline replica setup / 离线副本设置](docs/replication.en.md) · [中文](docs/replication.zh-CN.md)
 English | [简体中文](README.zh-CN.md)
 
 A local SQLite memory service and administration console for sharing confirmed personal context across agent tools.
@@ -10,7 +11,7 @@ A local SQLite memory service and administration console for sharing confirmed p
 
 [User guide](docs/tutorial.en.md) · [Quickstart](#quickstart) · [CLI and MCP](docs/integration.md) · [Skills](#skills) · [Validation](docs/validation.md) · [Security](SECURITY.md) · [Downloads](https://github.com/KarmenLoop/karmen-memory/releases)
 
-![The local memory console, with Koder, Koder CLI, and Cursor first](docs/images/overview-desktop.png)
+![The local memory console, with Koder, Koder CLI, and Cursor first](docs/images/overview-desktop-v0.3.0.png)
 
 ## What it does
 
@@ -87,7 +88,7 @@ node bin/memory.mjs pair --url https://HOST_IP:4319 \
 
 The client saves a private profile. A paired device sees only facts marked **全设备**, within its granted project. Closing sharing stops the listener; revoking its credential rejects subsequent requests. Clean service shutdown also turns sharing off. A public certificate contains no private key.
 
-This is access to a primary service. It does not replicate databases or provide a remote offline cache. Keep the primary computer running while remote clients use it. Two physical computers have not yet been tested together.
+The original remote-search mode accesses a running primary service. v0.3.0 also adds opt-in offline replicas below the LAN settings. Replicas use the same approved library, with project-scoped HTTPS transfer, durable versions, conflict review, and deletion markers. Two independent stores have been exercised on one Mac; two physical computers remain untested.
 
 ## Skills
 
@@ -114,17 +115,19 @@ Version 0.2.0 is a **local alpha**. The previous v0.1.0 release remains a histor
 | CLI and MCP stdio | Tested as independent processes against the service |
 | HTTPS listener and device pairing | Tested with independent local TLS clients |
 | Browser forms and responsive layouts | See the current validation record |
-| Native Koder, Koder CLI, Cursor and other host integration | Requires each installed host's runtime acceptance |
+| Codex and Cursor | Live Codex calls accepted; Cursor tools discovered, model turn blocked by local access limits |
+| Other installed hosts | Require their own runtime acceptance |
 | Two physical LAN computers | Not yet tested |
 | Semantic search, embeddings, model extraction | Not implemented; current methods are lexical and rule-based |
-| Offline replication, native Mac installer, Windows runtime | Not delivered or accepted |
+| Offline replicas | Implemented; real same-Mac HTTPS, conflicts, deletion and restart checks passed |
+| Native Mac installer, Windows runtime | Not delivered or accepted |
 | Recall accuracy and model token savings | No measured result; user-entered samples are labeled separately |
 
 ## Data and security
 
 The service stores local facts, evidence, revision snapshots, candidates, events, evaluations, and credential hashes. It does not automatically read agent chat histories, call a model, or send memory to third parties. Owner sessions are limited to the local machine with Host/Origin and CSRF checks. Tool access uses revocable random bearer credentials. The operating-system user is the local trust boundary.
 
-Database and credential files are not encrypted by the application. Use operating-system disk protection. SQLite snapshots contain personal data and credential hashes; protect them as private backups. JSON exports omit credential hashes. Memory text is context, not permission to execute a remembered command.
+Database and credential files are not encrypted by the application. Use operating-system disk protection. SQLite snapshots contain personal data, credential hashes, and outgoing replica connection tokens; protect them as private backups. JSON exports omit credential hashes. Memory text is context, not permission to execute a remembered command.
 
 Legacy browser prototype exports can be imported explicitly. Browser data is never silently promoted to confirmed facts. See [SECURITY.md](SECURITY.md) and [Getting started](docs/getting-started.md).
 

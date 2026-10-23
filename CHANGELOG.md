@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+Add opt-in offline replicas with project-scoped HTTPS pairing, durable version vectors, conflict review, deletion markers, and atomic updates to the existing SQLite library. Add workspace installers for Codex and Cursor without replacing the existing CLI/MCP contracts. Preserve the 0.2.0 service and revision history.
+
+
 ## 0.2.0 — 2026-10-23
 
 Local service alpha.
