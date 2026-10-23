@@ -5,6 +5,8 @@
 
 本地 SQLite 记忆服务与管理后台，让多个 Agent 工具使用同一份经过确认的个人上下文。当前版本 **v0.3.0**，处于本地 Alpha 阶段。
 
+v0.2.0 引入本地服务；v0.1.0 是历史浏览器原型，不代表当前版的存储方式。
+
 [使用指南](docs/tutorial.zh-CN.md) · [接入说明](docs/integration.md) · [验收记录](docs/validation.md) · [下载](https://github.com/KarmenLoop/karmen-memory/releases)
 
 ![使用真实数据库的管理后台](docs/images/overview-desktop-v0.3.0.png)
@@ -61,12 +63,14 @@ node bin/memory.mjs pair --url https://HOST_IP:4319 \
 
 只共享“全设备”范围内、项目获准的事实。关闭共享会关掉监听端口；撤销凭证后下次请求被拒绝。正常退出服务也会关闭共享。原有模式访问主节点，主节点离线时远端不能检索；新离线副本模式按上方教程单独配置。
 
+v0.3.0 的离线副本使用同一份已审核资料库，按项目范围通过 HTTPS 传输，保留持久版本、冲突审阅与删除标记。两个独立数据库已在同一台 Mac 上完成真实 HTTPS、冲突、删除和重启检查；两台实体电脑尚未验收。配置见[中文离线副本教程](docs/replication.zh-CN.md)。
+
 ## 技能、数据与限制
 
 [`karmen-memory`](skills/karmen-memory/SKILL.md) 用于实际检索与提交事实；[`shared-memory-console`](skills/shared-memory-console/SKILL.md) 用于管理界面设计。复制完整目录到宿主支持的技能位置并保留许可证。实际服务和凭证需另外配置。
 
-数据库保存事实、依据、候选、修订、审计、评估和凭证哈希，不会自动读取聊天历史或调用付费模型。操作系统用户是本地信任边界；应用未实现静态加密，请使用系统磁盘保护。SQLite 快照包含私人数据与凭证哈希，需要妥善保管。JSON 导出不包含凭证。旧浏览器原型数据需要显式检查后导入。
+数据库保存事实、依据、候选、修订、审计、评估和凭证哈希，不会自动读取聊天历史或调用付费模型。操作系统用户是本地信任边界；应用未实现静态加密，请使用系统磁盘保护。SQLite 快照包含私人数据、凭证哈希和出站副本连接令牌，应作为私有备份妥善保管。JSON 导出不包含凭证哈希。旧浏览器原型数据需要显式检查后导入。
 
-本机真实数据库、HTTP 权限、独立 CLI/MCP、TLS 配对与进程重启已有运行检查。原生 Koder/Koder CLI/Cursor 等宿主接入、两台实体电脑互通、Windows 运行、Mac 安装包、向量语义检索、模型提炼和成本收益仍需各自实现或验收。目前没有跨工具准确率或节省 1/3 的实测结论。
+本机真实数据库、HTTP 权限、独立 CLI/MCP、TLS 配对与进程重启已有运行检查。Codex 已完成真实工具调用；Cursor 已发现工具，模型回合受本机登录与额度限制，仍未验收。Koder/Koder CLI 等其他宿主、两台实体电脑互通、Windows 运行和 Mac 安装包需分别验收。向量语义检索、嵌入和模型提炼尚未实现，当前检索为词项匹配、提炼为本地规则。目前没有跨工具准确率或节省 1/3 的实测结论。
 
 [贡献](CONTRIBUTING.md) · [安全](SECURITY.md) · [Apache-2.0](LICENSE) · [NOTICE](NOTICE) · [第三方许可](THIRD_PARTY_NOTICES.md)
