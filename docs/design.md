@@ -1,27 +1,15 @@
 # Console design
 
-The console presents a traceable memory workflow: contextual input, extracted candidate, scope and conflict review, confirmed fact, authorized retrieval, and use feedback.
+The console keeps the existing light, moss-green workspace and nine routes. Koder, Koder CLI, and Cursor stay first across the overview and access page. Actual service state replaces sample counters and connections.
 
-## Pages
+The left navigation owns workspace sections; the top bar owns global fact filtering and candidate notifications. The main workspace shows the task and its current data. Detail drawers show evidence, scope, revision history, and archive/restore. Dialogs handle edits, review decisions, credential issue/revocation, pairing, and import confirmation.
 
-| Page | Primary task |
-| --- | --- |
-| Overview | Understand the memory library, priority tools, review queue, and recent use |
-| Memory library | Inspect, search, correct, favorite, archive, and restore facts |
-| Retrieval | See matches, reasons, sources, and proposed context |
-| Agent access | Configure simulated per-tool access and connection states |
-| LAN devices | Explore explicit sharing and device pairing states |
-| Candidate review | Check evidence, accept or exclude facts, and resolve scope differences |
-| Activity | Trace sample calls and actual prototype operations |
-| Evaluation | Understand a comparison and the requirements for real measurements |
-| Settings | Inspect storage, configuration intent, import/export, and sample reset |
+Database counts and observed requests are distinguished from host integration. A fresh database is empty. Configured credentials remain “waiting for first request” until the service receives one. Synthetic acceptance records name their source explicitly.
 
-## Koder-first hierarchy
+Memory fields are editable before approval. Potentially related facts remain visible, and a person chooses an independent scoped fact or replacement. A replacement archives the old record and links the new ID. Stale revisions return an actionable conflict rather than silently overwriting a newer version.
 
-Koder, Koder CLI, and Cursor appear first throughout the interface. Koder and Koder CLI have a KARMEN label; Cursor is identified as a priority editor. Other tools form a separate group. This order persists when a priority tool is paused.
+Loading and connection failures have a retry entry. Server errors remain visible with the form open. Mutating forms disable during a request. Native dialogs contain focus and support Escape. Narrow layouts preserve reachable primary actions and use contained horizontal scrolling for wide data tables. Token and certificate blocks wrap without widening the document.
 
-The light gray-white and moss-green palette is shared across pages. Larger headings, readable secondary text, clear focus, and consistent spacing support frequent desktop use. Navigation folds into a drawer on narrow screens. Priority tool cards become one column; long tables scroll within their own container.
+Extraction and retrieval state their actual methods. Evaluation separates observed lexical query metrics from user-recorded task samples. The total token comparison includes context, extraction, indexing, and retrieval; no savings number appears without samples.
 
-Dialogs use the native dialog element. Forms have visible labels, errors appear near the relevant operation, and writes produce status feedback. Reduced-motion preferences disable animation. These choices are not a complete accessibility certification.
-
-![Narrow-screen overview](images/overview-mobile.png)
+See [Implementation plan](implementation-plan.md) for the page-to-contract map, [Integration](integration.md) for permissions, and [Validation](validation.md) for actual evidence.

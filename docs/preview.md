@@ -1,15 +1,12 @@
-# Run the prebuilt preview
+# Running the prebuilt runtime
 
-This folder contains the static KARMEN Memory prototype, not a memory service.
-
-With Python 3 available, run this command from the extracted directory:
+The runtime archive includes the service source and built interface. It requires Node 22.16+ and npm. From its root run:
 
 ```sh
-python3 -m http.server 5187 --bind 127.0.0.1
+npm ci
+npm start
 ```
 
-Open `http://127.0.0.1:5187` in a browser. Stop the server with Ctrl+C. Use another free port if needed. Serve the extracted directory as the web root; opening index.html directly does not load the absolute asset paths correctly.
+Open `http://127.0.0.1:4318`. The default private database is `~/.karmen-memory/memory.sqlite`; set `KARMEN_MEMORY_HOME` to use an isolated location. Stop the process with Ctrl-C. LAN starts disabled and needs OpenSSL certificate generation plus explicit pairing.
 
-Memories and changes stay in that browser origin's localStorage. Use synthetic data. Connections, pairing, and token figures are demonstrations. No real agent configuration, encrypted database, or LAN synchronization is included.
-
-Keep LICENSE, NOTICE, THIRD_PARTY_NOTICES.md, and LICENSES/ with redistributed copies.
+The UI requires the included API service. Serving only `dist/` through a static file server does not provide memory storage or authentication. See README and docs/getting-started.md for backup and recovery.

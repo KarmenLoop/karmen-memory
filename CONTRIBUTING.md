@@ -6,12 +6,13 @@ For a larger change, open an issue describing the user problem and expected beha
 
 ## Local development
 
-Use Node.js 22.12 or newer.
+Use Node.js 22.16 or newer.
 
 ```sh
 npm ci
+npm test
 npm run build
-npm run dev -- --port 5186 --strictPort
+npm run dev -- --port 5186
 ```
 
 For an interface change, check the actual task and the desktop and narrow-screen layouts. For a data change, check reload persistence, archive state, original source, version, and combined filters. Use synthetic data. Do not depend on a personal database, paid model, or logged-in agent.
@@ -20,7 +21,7 @@ For an interface change, check the actual task and the desktop and narrow-screen
 
 Describe the concrete problem, changed behavior, and checks you ran. Include a screenshot when it helps assess an interface change. Report remaining integration or platform limits separately from local results.
 
-Keep changes focused. Use natural, concrete US English in commit messages, the repository description, and the README. The demonstration interface is currently Chinese; a new localization should identify which language was actually checked.
+Keep changes focused. Use natural, concrete US English in commit messages, the repository description, and the README. The interface is currently Chinese; a new localization should identify which language was actually checked.
 
 Never attach credentials, private conversations, browser storage exports containing personal information, or raw support logs. Report sensitive findings through [SECURITY.md](SECURITY.md).
 

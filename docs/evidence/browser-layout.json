@@ -1,0 +1,123 @@
+{
+  "desktop": [
+    {
+      "route": "overview",
+      "dialog": false,
+      "heading": "让工作接续，让记忆共通。",
+      "scroll": 1433,
+      "width": 1440
+    },
+    {
+      "route": "memories",
+      "dialog": false,
+      "heading": "记忆库",
+      "scroll": 1440,
+      "width": 1440
+    },
+    {
+      "route": "retrieve",
+      "dialog": false,
+      "heading": "检索体验",
+      "scroll": 1440,
+      "width": 1440
+    },
+    {
+      "route": "agents",
+      "dialog": false,
+      "heading": "Agent 接入",
+      "scroll": 1433,
+      "width": 1440
+    },
+    {
+      "route": "devices",
+      "dialog": false,
+      "heading": "局域网设备",
+      "scroll": 1440,
+      "width": 1440
+    },
+    {
+      "route": "pipeline",
+      "dialog": false,
+      "heading": "记忆提炼",
+      "scroll": 1440,
+      "width": 1440
+    },
+    {
+      "route": "activity",
+      "dialog": false,
+      "heading": "调用记录",
+      "scroll": 1440,
+      "width": 1440
+    },
+    {
+      "route": "analytics",
+      "dialog": false,
+      "heading": "效果评估",
+      "scroll": 1440,
+      "width": 1440
+    },
+    {
+      "route": "settings",
+      "dialog": false,
+      "heading": "设置",
+      "scroll": 1440,
+      "width": 1440
+    }
+  ],
+  "mobile": [
+    {
+      "route": "overview",
+      "heading": "让工作接续，让记忆共通。",
+      "scroll": 383,
+      "width": 390
+    },
+    {
+      "route": "memories",
+      "heading": "记忆库",
+      "scroll": 390,
+      "width": 390
+    },
+    {
+      "route": "retrieve",
+      "heading": "检索体验",
+      "scroll": 390,
+      "width": 390
+    },
+    {
+      "route": "agents",
+      "heading": "Agent 接入",
+      "scroll": 383,
+      "width": 390
+    },
+    {
+      "route": "devices",
+      "heading": "局域网设备",
+      "scroll": 383,
+      "width": 390
+    },
+    {
+      "route": "pipeline",
+      "heading": "记忆提炼",
+      "scroll": 383,
+      "width": 390
+    },
+    {
+      "route": "activity",
+      "heading": "调用记录",
+      "scroll": 383,
+      "width": 390
+    },
+    {
+      "route": "analytics",
+      "heading": "效果评估",
+      "scroll": 383,
+      "width": 390
+    },
+    {
+      "route": "settings",
+      "heading": "设置",
+      "scroll": 383,
+      "width": 390
+    }
+  ]
+}

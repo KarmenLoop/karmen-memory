@@ -8,3 +8,11 @@ release/
 .DS_Store
 .local/
 coverage/
+
+__pycache__/
+*.pyc
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.pem
+*.key

@@ -1,17 +1,18 @@
 # Release guide
 
-The initial publication is version 0.1.0 and is marked as a prerelease prototype.
+Version 0.2.0 is a local service alpha. Preserve v0.1.0 as the historical prototype.
 
-From a clean checkout with Node.js 22.12 or newer, npm, Python 3, and Git:
+From a clean committed checkout with Node 22.16+, npm, OpenSSL, Python 3, and Git:
 
 ```sh
 npm ci
+npm test
 npm run build
 python3 scripts/package_release.py
 ```
 
-The script requires a clean committed tree. It packages tracked source, the complete portable skill, and the built static preview. Each archive has a stable root folder and the relevant license notices. It verifies ZIP integrity, writes SHA256SUMS, and records the source commit in build-info.json. Outputs are in the ignored release/ directory.
+Packaging includes tracked source, each complete portable skill, and a runtime archive with the built interface plus service source. The runtime requires `npm ci` and `npm start`; it is not a standalone static website. Outputs under ignored `release/` include SHA256SUMS and build-info.json with the exact commit. Archives are checked for ZIP integrity.
 
-Before publishing, check the source and preview artifacts, documentation links, asset licensing, and build result. Open the prebuilt preview through a loopback static server. Tag the same commit used by build-info.json, publish the verified archives with their checksums, and identify the release as a prototype until real-service acceptance exists.
+Before publishing, extract the runtime into an isolated directory, start it with an isolated `KARMEN_MEMORY_HOME`, and complete creation/retrieval through the service. Verify private runtime data, credentials, local paths, logs, and test databases are absent from all archives. Check notices, docs, CI, and screenshots. Publish only the packages for the tagged commit; read back downloads and compare hashes.
 
-A successful build or archive check does not establish database, adapter, authentication, cross-device synchronization, or measured recall/cost behavior. Release notes should state those boundaries.
+Release notes distinguish real storage/API/CLI/MCP/local TLS evidence from installed native hosts, physical computers, platform packages, semantic accuracy, and model savings. A prerelease and successful CI do not establish those untested outcomes.

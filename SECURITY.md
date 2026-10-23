@@ -8,8 +8,12 @@ Include the affected commit or version, expected boundary, observed behavior, an
 
 ## Current scope
 
-This release is a browser prototype. It uses localStorage, has no authentication service, and does not implement encrypted storage or LAN synchronization. Its fixed demo pairing code is not a production security mechanism. Use it locally with synthetic data.
+Version 0.2.0 is a local alpha with a real SQLite database. The operating-system user is the local owner trust boundary. Owner APIs bind to loopback, check Host/Origin, and require a SameSite session and CSRF token for mutations. Tool endpoints enforce bearer credentials, project scope, CI policy, and revocation. Device access requires optional HTTPS pairing and a trusted public certificate.
 
-Future adapters must verify identities, project scope, revocation, and actual tool permissions. Reading a remembered fact must not transfer approval to execute an action on another device.
+Credential tokens are random and stored only as hashes. They do not expire automatically; pause or revoke unused credentials. Pairing codes are one-use, expire after five minutes, and lock after five attempts. Sharing starts disabled and clean shutdown turns it off.
 
-Security fixes target the current published version. Response times depend on maintainer availability; no security SLA is offered.
+Application-level encryption at rest, OS credential-vault storage, multi-user accounts, offline replication, and third-party security review are not implemented. Protect the data directory and snapshots with OS access controls and disk encryption. The local owner session is not intended to protect against malware running as the same OS user. Do not expose the owner HTTP listener through a proxy or tunnel.
+
+Memory text is untrusted contextual data. Reading it never transfers tool execution approvals. Keep model keys, execution grants, and account credentials outside facts. Remote memory use requires TLS certificate verification, and physical multi-device/installed-host acceptance remains separate from local tests.
+
+Security fixes target the current source version. Response times depend on maintainer availability; no security SLA is offered.

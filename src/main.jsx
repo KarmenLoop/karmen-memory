@@ -1,107 +1,2551 @@
-import React, {useState,useEffect,useRef} from 'react';
-import {createRoot} from 'react-dom/client';
-import {Activity,ArrowDownToLine,ArrowLeft,ArrowRight,ArrowUpRight,Bell,Blocks,BookOpen,Check,CheckCheck,ChevronDown,ChevronRight,ChevronsUpDown,CircleHelp,Cloud,Code2,Command,Copy,Database,Ellipsis,ExternalLink,FileText,Filter,Fingerprint,Folder,GitBranch,Globe,HardDrive,History,KeyRound,Layers,LayoutDashboard,Link2,LockKeyhole,Menu,Monitor,MousePointer2,Network,Plus,Search,Server,Settings,ShieldCheck,Sparkles,Star,Terminal,Trash2,Unplug,Upload,Users,Workflow,X,ChartNoAxesCombined,RefreshCw,TriangleAlert} from 'lucide-react';
-import {seedMemories,seedAgents,seedCandidates,seedEvents,navItems,reconcileAgents} from './data';
-import '@fontsource-variable/manrope';
-import './style.css';
-import './workbench.css';
+import React, { useState, useEffect, useRef } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  Activity,
+  ArrowDownToLine,
+  ArrowRight,
+  ArrowUpRight,
+  Bell,
+  Blocks,
+  Check,
+  ChevronRight,
+  ChevronsUpDown,
+  CircleHelp,
+  Code2,
+  Copy,
+  Database,
+  FileText,
+  Filter,
+  Folder,
+  GitBranch,
+  HardDrive,
+  History,
+  KeyRound,
+  Layers,
+  LayoutDashboard,
+  LockKeyhole,
+  Menu,
+  Monitor,
+  MousePointer2,
+  Network,
+  Plus,
+  RefreshCw,
+  Search,
+  Server,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Terminal,
+  TriangleAlert,
+  Unplug,
+  Upload,
+  Workflow,
+  X,
+  ChartNoAxesCombined,
+  Cloud,
+} from "lucide-react";
+import { catalog, navItems } from "./catalog";
+import { api, connect, download } from "./api";
+import "@fontsource-variable/manrope";
+import "./style.css";
+import "./workbench.css";
+import "./service.css";
 
-const icons={overview:LayoutDashboard,database:Database,search:Search,blocks:Blocks,network:Network,sparkles:Sparkles,activity:Activity,chart:ChartNoAxesCombined,settings:Settings,terminal:Terminal,code:Code2,workflow:Workflow,layers:Layers,cloud:Cloud,monitor:Monitor,cursor:MousePointer2};
-const storageKey='karmen-memory-console-demo-v1';
-const initial=()=>({memories:seedMemories,agents:seedAgents,candidates:seedCandidates,events:seedEvents,lan:false,devices:[],settings:{review:true,preferences:true,ci:true}});
-function readState(){try{const s=JSON.parse(localStorage.getItem(storageKey));return s?.version===1?{...initial(),...s.data,agents:reconcileAgents(s.data?.agents)}:initial();}catch{return initial();}}
-function Icon({name,size=18,...p}){const C=icons[name]||Database;return <C size={size} strokeWidth={1.65} aria-hidden="true" {...p}/>;}
-function Tag({children,tone=''}){return <span className={`tag ${tone}`}>{children}</span>;}
-function AgentMark({agent,small=false}){const C=icons[agent.icon]||Terminal;return <span aria-hidden="true" className={`agent-mark ${agent.color} ${small?'small':''}`}><span className={agent.firstParty?'koder-monogram':'agent-glyph'}>{agent.firstParty?<span>K{agent.name==='Koder CLI'&&<small>_</small>}</span>:<C size={small?16:21} strokeWidth={1.8}/>}</span></span>;}
-function Empty({title,body,action}){return <div className="empty"><Search size={30}/><h3>{title}</h3><p>{body}</p>{action}</div>;}
-function Switch({checked,onChange,label}){return <button className={`switch ${checked?'on':''}`} role="switch" aria-checked={checked} aria-label={label} onClick={()=>onChange(!checked)}><span/></button>;}
-function Modal({children,onClose,title,drawer=false}){const ref=useRef();useEffect(()=>{const d=ref.current;d.showModal();return ()=>{if(d.open)d.close();};},[]);return <dialog ref={ref} className={drawer?'drawer':'modal'} aria-labelledby="dialog-title" onCancel={onClose} onClick={e=>{if(e.target===e.currentTarget)onClose();}}><div className="dialog-top"><h2 id="dialog-title">{title}</h2><button className="icon-btn" aria-label="关闭" onClick={onClose}><X size={19}/></button></div>{children}</dialog>;}
-
-function App(){
- const [data,setData]=useState(readState),[view,setView]=useState(navItems.some(n=>n.id===location.hash.slice(1))?location.hash.slice(1):'overview');
- const [search,setSearch]=useState(''),[filter,setFilter]=useState('全部记忆'),[typeFilter,setTypeFilter]=useState('全部类型'),[project,setProject]=useState('全部项目'),[selected,setSelected]=useState(null),[modal,setModal]=useState(null),[toast,setToast]=useState(''),[mobile,setMobile]=useState(false),[query,setQuery]=useState(''),[results,setResults]=useState(null),[retrieving,setRetrieving]=useState(false);
- const [agentSelected,setAgentSelected]=useState(null),[pairName,setPairName]=useState('Mac mini'),[pairCode,setPairCode]=useState(''),[pairError,setPairError]=useState(''),[importError,setImportError]=useState('');
- const searchRef=useRef(),uploadRef=useRef(),timerRef=useRef();
- useEffect(()=>{try{localStorage.setItem(storageKey,JSON.stringify({version:1,data}));}catch{setToast('浏览器存储不可用，本次修改仅保留到页面关闭。');}},[data]);
- useEffect(()=>{const f=()=>{const id=location.hash.slice(1);if(navItems.some(n=>n.id===id))setView(id);};window.addEventListener('hashchange',f);return()=>window.removeEventListener('hashchange',f);},[]);
- useEffect(()=>{const f=e=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();searchRef.current?.focus();}};window.addEventListener('keydown',f);return()=>window.removeEventListener('keydown',f);},[]);
- useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),3400);return()=>clearTimeout(t);},[toast]);
- useEffect(()=>()=>clearTimeout(timerRef.current),[]);
- const go=id=>{setView(id);location.hash=id;setMobile(false);window.scrollTo({top:0});};
- const notify=s=>setToast(s);
- const log=(d,action,detail,agent='控制台')=>[{id:crypto.randomUUID(),time:new Date().toLocaleTimeString('zh-CN',{hour12:false}),agent,action,detail,status:'成功',duration:0},...d.events].slice(0,100);
- const active=data.memories.filter(m=>m.status==='active');
- const pending=data.candidates.filter(c=>c.status==='pending');
- const connected=data.agents.filter(a=>a.status==='connected');
- const selectedMemory=data.memories.find(m=>m.id===selected);
- const chosenAgent=data.agents.find(a=>a.name===agentSelected);
- const featuredAgents=data.agents.filter(a=>a.featured);
- const otherAgents=data.agents.filter(a=>!a.featured);
- const byteSize=new TextEncoder().encode(JSON.stringify(data.memories)).length;
- const filtered=data.memories.filter(m=>(filter==='已归档'?m.status==='archived':m.status==='active')&&(filter!=='已收藏'||m.favorite)&&(typeFilter==='全部类型'||m.type===typeFilter)&&(project==='全部项目'||m.project===project)&&(m.title+m.body+m.type+m.source+m.project).toLowerCase().includes(search.toLowerCase()));
- function updateMemory(id,changes){setData(d=>({...d,memories:d.memories.map(m=>m.id===id?{...m,...changes,updated:new Date().toISOString(),revision:m.revision+1}:m),events:log(d,'更新记忆',changes.title||d.memories.find(m=>m.id===id)?.title)}));}
- function saveMemory(e){e.preventDefault();const f=new FormData(e.currentTarget);const title=f.get('title').trim(),body=f.get('body').trim();if(!title||!body)return;const values={title,body,type:f.get('type'),project:f.get('project').trim()||'全部项目',scope:f.get('scope')};if(modal.edit){updateMemory(modal.edit.id,values);}else{setData(d=>({...d,memories:[{...values,id:crypto.randomUUID(),source:'手动录入',confidence:100,uses:0,favorite:false,status:'active',updated:new Date().toISOString(),provenance:'用户手动创建 · 本地演示',revision:1},...d.memories],events:log(d,'创建记忆',title)}));}setModal(null);notify('已保存到此浏览器的演示记忆库');}
- function approve(c,mode='new'){setData(d=>({...d,candidates:d.candidates.map(x=>x.id===c.id?{...x,status:mode==='reject'?'rejected':'approved'}:x),memories:mode==='reject'?d.memories:[{...c,id:crypto.randomUUID(),title:mode==='scope'?'新项目使用 pnpm，现有项目沿用原有 lockfile':c.title,body:mode==='scope'?'pnpm 适用于新建项目；已有项目保留其包管理器与 lockfile。':c.body,status:'active',scope:'全设备',uses:0,favorite:false,updated:new Date().toISOString(),provenance:c.evidence,revision:1},...d.memories],events:log(d,mode==='reject'?'排除候选':'审核入库',c.title)}));notify(mode==='reject'?'已排除该候选，原有记忆保留':'已确认范围并存入演示记忆库');}
- async function copy(text){try{await navigator.clipboard.writeText(text);notify('已复制');}catch{notify('浏览器未允许剪贴板访问，可直接选择文本复制');}}
- function retrieve(text=query){setQuery(text);setRetrieving(true);setResults(null);clearTimeout(timerRef.current);timerRef.current=setTimeout(()=>{const terms=text.toLowerCase().match(/[a-z]+|[\u4e00-\u9fff]{2}/g)||[];const hits=active.map(m=>{const all=(m.title+m.body+m.project).toLowerCase();let score=terms.reduce((s,t)=>s+(all.includes(t)?1:0),0);if(/提交|commit|英文/.test(text)&&m.id==='m02')score+=5;if(/本地|同步|设备|密钥/.test(text)&&['m03','m06','m10'].includes(m.id))score+=4;if(/规范|代码|strict|typescript/i.test(text)&&['m01','m08','m14'].includes(m.id))score+=4;return {...m,score};}).filter(m=>m.score>0).sort((a,b)=>b.score-a.score).slice(0,4);setResults(hits);setRetrieving(false);setData(d=>({...d,events:log(d,'演示检索',`查询“${text.slice(0,35)}” · 命中 ${hits.length} 条`)}));},420);}
- function exportData(){setModal({type:'export'});}
- function downloadData(){const payload={schema:'karmen-memory-console-demo',version:1,exportedAt:new Date().toISOString(),memories:data.memories};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='karmen-memory-demo.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('已请求浏览器下载；也可以复制下方 JSON');}
- async function importData(e){const file=e.target.files?.[0];e.target.value='';if(!file)return;try{if(file.size>1_000_000)throw Error('文件超过 1 MB，请缩小后重试。');const v=JSON.parse(await file.text());if(v.schema!=='karmen-memory-console-demo'||v.version!==1||!Array.isArray(v.memories)||v.memories.length>500)throw Error('请选择从本原型导出的记忆 JSON。');const allowedTypes=['个人偏好','项目需求','代码规范','架构决策','工作方式'];const items=v.memories.map(m=>{if(!m||typeof m.title!=='string'||!m.title.trim()||m.title.length>120||typeof m.body!=='string'||!m.body.trim()||m.body.length>3000||!allowedTypes.includes(m.type)||typeof m.project!=='string'||m.project.length>80)throw Error('文件中的记忆字段或长度不符合要求。');return {id:crypto.randomUUID(),title:m.title.trim(),body:m.body.trim(),type:m.type,project:m.project,source:typeof m.source==='string'&&m.source.length<=80?m.source:'JSON 导入',confidence:Number.isFinite(m.confidence)&&m.confidence>=0&&m.confidence<=100?m.confidence:100,uses:Number.isSafeInteger(m.uses)&&m.uses>=0?m.uses:0,scope:m.scope==='仅本机'?'仅本机':'全设备',favorite:m.favorite===true,status:m.status==='archived'?'archived':'active',updated:typeof m.updated==='string'&&m.updated.length<=40&&!Number.isNaN(Date.parse(m.updated))?new Date(m.updated).toISOString():new Date().toISOString(),provenance:typeof m.provenance==='string'&&m.provenance.length<=2000?m.provenance:'本地演示 JSON 导入',revision:Number.isSafeInteger(m.revision)&&m.revision>=1&&m.revision<=1000000?m.revision:1};});setData(d=>({...d,memories:[...items,...d.memories],events:log(d,'导入演示记忆',`${items.length} 条`)}));setImportError('');notify(`已导入 ${items.length} 条演示记忆`);}catch(err){setImportError(err.message);setModal({type:'importError'});}}
- function memoryTable(items,compact=false){return items.length?<div className="table-scroll"><table className={`memory-table ${compact?'compact':''}`}><thead><tr><th>记忆内容</th><th>类型</th><th>来源 Agent</th>{!compact&&<th>项目</th>}<th>更新</th><th><span className="sr-only">收藏</span></th></tr></thead><tbody>{items.map(m=><tr key={m.id}><td><button className="memory-open" onClick={()=>setSelected(m.id)}><span className="memory-symbol"><FileText size={16}/></span><span><strong>{m.title}</strong><small>{compact?m.project:m.body}</small></span></button></td><td><Tag tone={m.type==='个人偏好'?'purple':m.type==='代码规范'?'blue':'neutral'}>{m.type}</Tag></td><td><span className="source-name"><span className={`source-dot ${m.source==='Claude Code'?'clay':''}`}/>{m.source}</span></td>{!compact&&<td>{m.project}</td>}<td className="muted">{m.updated.slice(5,10).replace('-','/')}</td><td><button className={`icon-btn favorite ${m.favorite?'selected':''}`} aria-label={`${m.favorite?'取消收藏':'收藏'}：${m.title}`} onClick={()=>updateMemory(m.id,{favorite:!m.favorite})}><Star size={16} fill={m.favorite?'currentColor':'none'}/></button></td></tr>)}</tbody></table></div>:<Empty title="没有找到记忆" body="换一个关键词，或创建第一条记忆。" action={<button className="btn" onClick={()=>{setSearch('');setFilter('全部记忆');setTypeFilter('全部类型');setProject('全部项目');}}>清除筛选</button>}/>;}
- function pageHeader(title,description,action){return <div className="page-heading"><div><h1>{title}</h1><p>{description}</p></div>{action}</div>;}
- function topology(){
-  const left=data.agents.filter(a=>a.featured),right=data.agents.filter(a=>!a.featured&&a.status==='connected').slice(0,3);
-  const node=(a,priority=false)=><button className={`agent-node ${priority?'priority-node':''}`} key={a.name} onClick={()=>setAgentSelected(a.name)} aria-label={`${a.name} 接入配置`}><AgentMark agent={a}/><span><strong>{a.name}</strong><small>{a.role||a.kind}</small></span><span className={`status-dot ${a.status==='connected'?'':'off'}`} title={a.status==='connected'?'演示连接':'未连接'}/></button>;
-  return <><div className="topology-captions"><span>优先工作工具</span><span>共享记忆</span><span>更多 Agent</span></div><div className="topology"><svg className="topology-lines" viewBox="0 0 700 260" preserveAspectRatio="none" aria-hidden="true"><path className="priority-path" d="M155 47 H235 Q260 47 260 73 V115 H340 M155 130 H340 M155 213 H235 Q260 213 260 187 V145 H340"/><path d="M360 115 H440 V73 Q440 47 465 47 H545 M360 130 H545 M360 145 H440 V187 Q440 213 465 213 H545"/></svg><div className="node-column priority-column">{left.map(a=>node(a,true))}</div><button className="memory-core" onClick={()=>go('memories')} aria-label="打开共享记忆库"><span className="core-orbit"><span><Layers size={32} strokeWidth={1.45}/></span></span><strong>个人记忆库</strong><small>One memory. Every agent.</small><span className="core-count">{active.length} 条结构化记忆</span></button><div className="node-column">{right.map(a=>node(a))}</div></div></>;
- }
- function agentCard(a,featured=false){return <section className={`panel agent-card ${featured?'featured-agent':''} ${a.firstParty?'first-party-agent':''}`} key={a.name}><div className="agent-card-top"><AgentMark agent={a}/>{featured?<Tag tone={a.firstParty?'green':'neutral'}>{a.firstParty?'KARMEN':'常用编辑器'}</Tag>:<button className="icon-btn" aria-label={`配置 ${a.name}`} onClick={()=>setAgentSelected(a.name)}><Ellipsis size={19}/></button>}</div><h2>{a.name}</h2>{featured?<><span className="agent-role">{a.role}</span><p className="agent-description">{a.description}</p></>:<p>{a.kind}</p>}<div className="agent-card-status"><span className={a.status==='connected'?'positive':'muted'}><span className={`status-dot ${a.status==='connected'?'':'off'}`}/>{a.status==='connected'?'已连接 · 演示':a.status==='paused'?'已暂停':'待配置'}</span><span>{a.permission==='read'?'只读':'读写'}</span></div><div className="agent-card-footer"><span>{a.calls} 次演示调用</span><button className={featured?'btn':'text-link'} onClick={()=>setAgentSelected(a.name)} aria-label={`配置 ${a.name}`}>{featured?'配置接入':'配置'}<ArrowRight size={14}/></button></div></section>;}
-
-
- return <div className="app-shell"><a href="#main-content" className="skip-link">跳到主内容</a>{mobile&&<button className="sidebar-scrim" aria-label="关闭导航" onClick={()=>setMobile(false)}/>}<aside className={`sidebar ${mobile?'mobile-open':''}`}><button className="brand" onClick={()=>go('overview')}><span className="brand-symbol"><Layers size={23} strokeWidth={1.8}/></span><span>KARMEN<span className="brand-sub">MEMORY</span></span></button><button className="workspace-btn" onClick={()=>setModal({type:'workspace'})}><span className="workspace-avatar">B</span><span><strong>我的个人空间</strong><small>Personal workspace</small></span><ChevronsUpDown size={15}/></button><nav aria-label="主导航">{navItems.map((n,i)=><React.Fragment key={n.id}>{(i===0||n.group!==navItems[i-1].group)&&<div className="nav-group">{n.group}</div>}<button className={`nav-item ${view===n.id?'active':''}`} onClick={()=>{go(n.id);setSearch('');}} aria-current={view===n.id?'page':undefined}><Icon name={n.icon}/><span>{n.label}</span>{n.id==='pipeline'&&pending.length>0&&<b className="count-badge">{pending.length}</b>}{n.id==='agents'&&<span className="nav-number">{connected.length}</span>}</button></React.Fragment>)}</nav><div className="sidebar-bottom"><div className="local-engine"><span className="engine-icon"><HardDrive size={18}/></span><div><strong>本地记忆引擎 <span className="live-dot"/></strong><small>演示环境 · 数据留在浏览器</small></div></div><button className="help-link" onClick={()=>setModal({type:'help'})}><CircleHelp size={17}/>使用指南<ArrowUpRight size={14}/></button><button className="user-profile" onClick={()=>go('settings')}><span className="profile-avatar">B</span><span><strong>Boris</strong><small>个人账户</small></span><Settings size={16}/></button></div></aside>
- <div className="main-shell"><header className="topbar"><div className="breadcrumb"><button className="icon-btn mobile-menu" aria-label="打开导航" onClick={()=>setMobile(true)}><Menu size={21}/></button><span>个人空间</span><ChevronRight size={13}/><strong>{navItems.find(n=>n.id===view)?.label}</strong></div><div className="topbar-right"><label className="global-search"><Search size={16}/><input ref={searchRef} aria-label="全局搜索记忆" placeholder="搜索你的记忆…" value={search} onChange={e=>{setSearch(e.target.value);if(view!=='memories')go('memories');}}/><kbd>⌘ K</kbd></label><span className="demo-label">交互原型</span><button className="icon-btn notifications" aria-label={`通知：${pending.length} 条记忆待审核`} onClick={()=>go('pipeline')}><Bell size={19}/>{pending.length>0&&<span/>}</button><span className="top-avatar">B</span></div></header>
- <main id="main-content" tabIndex={-1}>
- {view==='overview'&&<>
- {pageHeader('让工作接续，让记忆共通。','从 Koder、Koder CLI 到 Cursor，让每一次工作都带着你的上下文。',<div className="heading-actions"><button className="btn" onClick={()=>uploadRef.current.click()}><Upload size={16}/>导入记忆</button><button className="btn primary" onClick={()=>setModal({type:'memory'})}><Plus size={17}/>添加记忆</button></div>)}
- <div className="overview-status"><span><span className="live-dot"/>本地优先</span><i/><span><ShieldCheck size={14}/>个人数据由你掌控</span><i/><span className="muted">以下连接与指标为演示数据</span></div>
- <div className="stats-grid"><div className="stat"><div><span>结构化记忆</span><Database size={17}/></div><strong>{active.length.toLocaleString()}<small>条</small></strong><p><span className="positive">+{data.memories.filter(m=>m.updated.startsWith('2026-10-22')).length}</span> 最近更新 </p></div><div className="stat"><div><span>已接入 Agent</span><Blocks size={17}/></div><strong>{connected.length}<small>/ {data.agents.length}</small></strong><p><span className="live-dot"/> 共享同一份个人上下文</p></div><div className="stat"><div><span>本地活动</span><Link2 size={17}/></div><strong>{data.events.length}<small>次</small></strong><p>本次演示中的调用与操作</p></div><div className="stat"><div><span>上下文节省 · 示例</span><ChartNoAxesCombined size={17}/></div><strong>31.8<small>%</small></strong><p><span className="positive">演示对照</span><button className="text-link" onClick={()=>go('analytics')}>查看评估 <ArrowUpRight size={12}/></button></p></div></div>
- <div className="overview-main"><section className="panel connections-panel"><div className="panel-heading"><div><h2>围绕你的 Koder 工作流</h2><p>桌面、终端与编辑器，共用同一份个人记忆。</p></div><button className="text-link" onClick={()=>go('agents')}>管理接入<ArrowUpRight size={14}/></button></div>{topology()}<div className="connection-footer"><span><span className="live-dot"/>{connected.length} 个演示连接 <button className="inline-more" onClick={()=>go('agents')}>查看全部 {data.agents.length} 个工具<ChevronRight size={12}/></button></span><span><LockKeyhole size={14}/>按项目与权限检索</span><button onClick={()=>go('devices')}>局域网共享 <span className={`status-dot ${data.lan?'':'off'}`}/>{data.lan?'演示已开启':'未开启'}<ChevronRight size={13}/></button></div></section>
- <section className="panel health-panel"><div className="panel-heading"><h2>记忆状态</h2><ShieldCheck size={18}/></div><div className="storage-row"><span className="storage-icon"><Database size={22}/></span><div><strong>个人记忆库</strong><small>本地存储 · 演示</small></div><Tag tone="green">可用</Tag></div><dl className="health-details"><div><dt>存储体积</dt><dd>{(byteSize/1024).toFixed(1)} KB</dd></div><div><dt>记忆范围</dt><dd>{new Set(active.filter(m=>m.project!=='全部项目').map(m=>m.project)).size} 个项目 + 通用记忆</dd></div><div><dt>同步方式</dt><dd>{data.lan?'局域网 · 演示':'仅本机'}</dd></div></dl><div className="review-callout"><span><Sparkles size={17}/>有 {pending.length} 条新记忆等待确认</span><p>提炼关键信息，保留来源与上下文。</p><button className="text-link" onClick={()=>go('pipeline')}>前往审核<ArrowRight size={14}/></button></div><div className="privacy-note"><ShieldCheck size={15}/><span>API 密钥与执行权限独立保管</span></div></section></div>
- <div className="overview-bottom"><section className="panel recent-panel"><div className="panel-heading"><h2>最近的记忆 <span className="heading-count">{active.length}</span></h2><button className="text-link" onClick={()=>go('memories')}>查看全部<ArrowRight size={14}/></button></div>{memoryTable(active.slice(0,4),true)}</section><section className="panel activity-panel"><div className="panel-heading"><h2>跨工具动态</h2><button className="icon-btn" aria-label="查看全部调用记录" onClick={()=>go('activity')}><ArrowUpRight size={17}/></button></div><div className="timeline">{data.events.slice(0,3).map((e,i)=><div className="timeline-item" key={e.id}><span className="timeline-symbol">{i===2?<Sparkles size={15}/>:<Link2 size={15}/>}</span><div><strong>{e.agent}<span>{e.action}</span></strong><p>{e.detail}</p><small>{e.time.slice(0,5)}</small></div></div>)}</div></section></div>
- <div className="page-foot"><span><Layers size={14}/>One memory. Every agent.</span><span>本地优先 · 按需检索 · 由你掌控</span></div>
- </>}
-
- {view==='memories'&&<>{pageHeader('记忆库','把项目需求、代码规范和个人偏好，沉淀为可追溯的结构化记忆。',<button className="btn primary" onClick={()=>setModal({type:'memory'})}><Plus size={17}/>添加记忆</button>)}<div className="memory-toolbar"><div className="tabs">{['全部记忆','已收藏','已归档'].map(t=><button key={t} className={filter===t?'active':''} onClick={()=>setFilter(t)}>{t}{t==='全部记忆'&&<span>{active.length}</span>}</button>)}</div><div className="toolbar-controls"><label className="filter-select"><Filter size={15}/><select aria-label="按记忆类型筛选" value={typeFilter} onChange={e=>setTypeFilter(e.target.value)}>{['全部类型','个人偏好','项目需求','代码规范','架构决策','工作方式'].map(t=><option key={t}>{t}</option>)}</select></label><select aria-label="按项目筛选" value={project} onChange={e=>setProject(e.target.value)}>{['全部项目',...new Set(data.memories.map(m=>m.project).filter(p=>p!=='全部项目'))].map(p=><option key={p}>{p}</option>)}</select><button className="btn" onClick={exportData}><ArrowDownToLine size={15}/>导出</button></div></div><section className="panel"><div className="list-info"><span>{search?`“${search}” 的搜索结果`:'你的个人记忆'}<b>{filtered.length} 条</b></span><label className="inline-search"><Search size={16}/><input aria-label="搜索记忆库" placeholder="搜索内容、来源、项目" value={search} onChange={e=>setSearch(e.target.value)}/>{search&&<button className="icon-btn" aria-label="清除搜索" onClick={()=>setSearch('')}><X size={14}/></button>}</label></div>{memoryTable(filtered)}<div className="table-footer">共 {filtered.length} 条 · 保留来源与版本记录<span>本地演示数据</span></div></section></>}
-
- {view==='agents'&&<>{pageHeader('Agent 接入','优先连接 Koder 工作流，让同一份个人记忆延续到每一个工具。',<button className="btn primary" onClick={()=>setModal({type:'connect'})}><Plus size={17}/>接入 Agent</button>)}<div className="featured-section-title"><div><h2>优先工作工具</h2><p>桌面工作台、终端与编辑器，沿着你的工作顺序排列。</p></div><span className="tool-total">{connected.length} / {data.agents.length} 个演示连接</span></div><div className="featured-agent-grid">{featuredAgents.map(a=>agentCard(a,true))}</div><div className="section-line more-tools-heading"><h2>更多工具 <span className="heading-count">{otherAgents.length}</span></h2><span>共用记忆，独立管理权限</span></div><div className="agent-grid">{otherAgents.map(a=>agentCard(a))}</div><div className="integration-strip"><Terminal size={23}/><div><h3>从 Koder CLI 延续到自动化流程</h3><p>终端与 CI 通过同一记忆服务读取项目上下文，CI 默认只读。</p></div><button className="btn" onClick={()=>setModal({type:'integration'})}>查看接入设计<ArrowUpRight size={15}/></button></div><div className="info-banner"><ShieldCheck size={19}/><p>所有连接状态均为演示。当前未连接真实工具，各工具的协议与权限仍需逐项验证。</p><Tag tone="neutral">演示环境</Tag></div></>}
-
-
- {view==='devices'&&<>{pageHeader('局域网设备','在你信任的设备之间共享记忆，离开网络后继续本地工作。',<button className="btn primary" onClick={()=>{setPairError('');setPairCode('');setModal({type:'pair'});}}><Plus size={17}/>添加设备</button>)}<section className="panel setting-row lan-setting"><span className="large-icon"><Network size={25}/></span><div><h2>局域网记忆共享</h2><p>{data.lan?'已在演示中开启共享，真实服务仍未启动。':'默认仅本机使用，开启后才允许受信任设备请求连接。'}</p></div><Switch checked={data.lan} label="局域网共享演示开关" onChange={v=>{setData(d=>({...d,lan:v,events:log(d,v?'开启共享演示':'关闭共享演示','未启动真实网络服务')}));notify(v?'已开启共享演示，未开放真实端口':'已关闭共享演示');}}/></section><div className="devices-grid"><section className="panel device-card"><div className="device-illustration"><Monitor size={65} strokeWidth={1.1}/><span className="device-status"><span className="live-dot"/>当前设备</span></div><h2>Boris 的 MacBook Pro</h2><p>macOS · 主记忆节点 · 示例设备</p><dl><div><dt>数据角色</dt><dd>本地源节点</dd></div><div><dt>共享范围</dt><dd>{data.lan?'允许演示配对':'仅本机'}</dd></div><div><dt>可用状态</dt><dd>浏览器原型</dd></div></dl></section>{data.devices.map(d=><section className="panel device-card" key={d.id}><div className="device-illustration"><Server size={59} strokeWidth={1.1}/><Tag tone="green">演示已配对</Tag></div><h2>{d.name}</h2><p>局域网设备 · 模拟节点</p><dl><div><dt>同步范围</dt><dd>全部可共享记忆</dd></div><div><dt>密钥与权限</dt><dd>不共享</dd></div><div><dt>数据状态</dt><dd>未实际传输</dd></div></dl><button className="text-link danger" onClick={()=>{setData(s=>({...s,devices:s.devices.filter(x=>x.id!==d.id),events:log(s,'移除演示设备',d.name)}));notify('已移除演示设备');}}>移除设备<Unplug size={14}/></button></section>)}<button className="add-device" onClick={()=>{setPairCode('');setPairError('');setModal({type:'pair'});}}><span><Plus size={25}/></span><strong>连接另一台电脑</strong><p>使用配对码确认设备身份</p><small>同一局域网 · 显式授权</small></button></div><section className="panel security-panel"><h2><ShieldCheck size={20}/>共享边界清晰可见</h2><div className="security-columns"><div><Fingerprint size={21}/><h3>逐台信任</h3><p>每个设备独立配对，可随时撤销访问。</p></div><div><GitBranch size={21}/><h3>保留冲突</h3><p>版本不一致时保留双方来源，进入审核。</p></div><div><KeyRound size={21}/><h3>权限分离</h3><p>共享记忆内容，API 密钥和执行授权留在原设备。</p></div></div></section></>}
-
- {view==='pipeline'&&<>{pageHeader('记忆提炼','从上下文中提取重点。每条记忆都有依据，每次冲突都能追溯。',<Tag tone="green">{pending.length} 条待审核</Tag>)}<div className="pipeline-flow">{[['上下文输入','项目对话与明确事实',FileText],['提炼与去重','识别偏好、规范和需求',Sparkles],['范围与冲突检查','保留来源，确认适用边界',GitBranch],['结构化记忆','供所有获准 Agent 检索',Database]].map(([a,b,C],i)=><React.Fragment key={a}><div><span><C size={21}/></span><h3>{a}</h3><p>{b}</p></div>{i<3&&<ArrowRight size={19} className="flow-arrow"/>}</React.Fragment>)}</div><div className="section-line"><h2>待确认的记忆</h2><span>演示候选 · 自动提炼引擎待接入</span></div>{pending.length?pending.map(c=><section className={`panel candidate ${c.conflict?'has-conflict':''}`} key={c.id}><div className="candidate-meta"><Tag tone={c.conflict?'amber':'green'}>{c.conflict?'需要确认适用范围':'建议入库'}</Tag><span>{c.source}</span><span>置信度 {c.confidence}% · 示例</span></div><h2>{c.title}</h2><p>{c.body}</p><div className="evidence"><FileText size={16}/><span>来源依据：{c.evidence}</span></div>{c.conflict&&<div className="conflict-box"><strong><TriangleAlert size={16}/>与现有记忆存在范围差异</strong><p>{c.conflict}</p><div><span>现有</span>{c.old}</div><div><span>新候选</span>{c.body}</div></div>}<div className="candidate-actions"><span><Folder size={14}/>{c.project} <span>·</span> {c.type}</span><div><button className="btn" onClick={()=>approve(c,'reject')}>排除</button><button className="btn primary" onClick={()=>approve(c,c.conflict?'scope':'new')}><Check size={15}/>{c.conflict?'按适用范围保留双方':'确认入库'}</button></div></div></section>):<section className="panel"><Empty title="本轮记忆已处理" body="新候选会出现在这里，处理结果保留在调用记录中。" action={<button className="btn" onClick={()=>go('memories')}>查看记忆库<ArrowRight size={15}/></button>}/></section>}<p className="muted small-note">原始聊天仅作为可追溯来源。此原型使用预置候选，不读取真实对话。</p></>}
-
- {view==='retrieve'&&<>{pageHeader('检索体验','在把记忆交给 Agent 之前，先看看它为什么被找到。')}<section className="panel retrieval-query"><div className="retrieval-icon"><Search size={25}/></div><h2>这个任务需要记住什么？</h2><p>输入你正在处理的问题，预览相关记忆及上下文。</p><form onSubmit={e=>{e.preventDefault();if(query.trim())retrieve();}}><input aria-label="检索问题" value={query} onChange={e=>setQuery(e.target.value)} placeholder="例如：这个项目的提交信息有什么要求？" maxLength={300}/><button className="btn primary" disabled={!query.trim()||retrieving}>{retrieving?<RefreshCw size={17} className="spinning"/>:<ArrowRight size={18}/>}检索</button></form><div className="suggestions">{['提交信息应该用什么语言？','跨设备如何同步记忆？','项目有哪些代码规范？'].map(q=><button key={q} onClick={()=>retrieve(q)}>{q}<ArrowUpRight size={12}/></button>)}</div><div className="retrieval-disclaimer">本地关键词检索演示 · 语义检索与真实模型待接入</div></section>{retrieving&&<div role="status" className="loading"><RefreshCw size={20} className="spinning"/>正在检索演示记忆…</div>}{results&&<><div className="section-line"><h2>找到 {results.length} 条相关记忆</h2><span>范围：当前演示记忆库</span></div>{results.length?<div className="retrieval-results"><div>{results.map((m,i)=><section className="panel hit" key={m.id}><div><span className="hit-index">{i+1}</span><Tag>{m.type}</Tag><span className="muted">关键词分数 {m.score}</span></div><button className="hit-title" onClick={()=>setSelected(m.id)}>{m.title}<ArrowUpRight size={15}/></button><p>{m.body}</p><footer>{m.project}<span>来源 {m.source}</span><span>版本 {m.revision}</span></footer></section>)}</div><section className="panel context-preview"><div className="panel-heading"><h2>上下文预览</h2><button className="icon-btn" aria-label="复制上下文" onClick={()=>copy(results.map(m=>`[${m.project} / ${m.type}] ${m.body}`).join('\n'))}><Copy size={16}/></button></div><pre>{results.map(m=>`[${m.project} / ${m.type}]\n${m.body}`).join('\n\n')}</pre><p>实际注入需由每个工具的适配器完成。</p></section></div>:<section className="panel"><Empty title="没有匹配的记忆" body="尝试“提交”“同步”或“代码规范”，也可以先添加相关记忆。"/></section>}</>}</>}
-
- {view==='activity'&&<>{pageHeader('调用记录','看见记忆在哪个工具中被使用，追溯每次写入与共享操作。',<button className="btn" onClick={()=>copy(JSON.stringify(data.events,null,2))}><Copy size={15}/>复制记录</button>)}<div className="info-banner"><Activity size={18}/><p>预置调用为演示记录；你在控制台中的新增、审核、检索和配置操作会追加在这里。</p></div><section className="panel"><div className="panel-heading"><h2>最近操作 <span className="heading-count">{data.events.length}</span></h2><Tag tone="neutral">本地演示</Tag></div><div className="table-scroll"><table className="event-table"><thead><tr><th>时间</th><th>工具 / 操作者</th><th>操作</th><th>详情</th><th>结果</th></tr></thead><tbody>{data.events.map(e=><tr key={e.id}><td className="mono muted">{e.time}</td><td><span className="source-name"><span className="source-dot"/>{e.agent}</span></td><td>{e.action}</td><td className="muted">{e.detail}</td><td><span className="positive"><Check size={13}/>{e.status}</span></td></tr>)}</tbody></table></div></section></>}
-
- {view==='analytics'&&<>{pageHeader('效果评估','用同一组任务比较上下文用量与记忆召回，明确每个结果的依据。',<Tag tone="amber">示例数据 · 尚未实测</Tag>)}<div className="info-banner"><CircleHelp size={19}/><p>31.8% 为界面演示值。正式报告需固定模型、任务集、对照策略，并计入提炼与检索成本。</p></div><div className="analytics-grid"><section className="panel token-chart"><div className="panel-heading"><div><h2>上下文 Token 对照</h2><p>相同任务集 · 7 天示例</p></div><div className="chart-legend"><span><i/>完整上下文</span><span><i/>按需记忆</span></div></div><div className="bar-chart" role="img" aria-label="7天示例柱状图：完整上下文使用88千Token，按需记忆使用60千Token，示例减少31.8%">{[[10,7],[12,8],[11,8],[14,9],[13,9],[15,10],[13,9]].map(([a,b],i)=><div className="bar-day" key={i}><div className="bar-pair"><div style={{height:`${a*10}px`}}><span>{a}k</span></div><div style={{height:`${b*10}px`}}><span>{b}k</span></div></div><small>10/{16+i}</small></div>)}</div><div className="chart-summary"><div><span>完整上下文</span><strong>88,000</strong></div><ArrowRight size={20}/><div><span>按需记忆</span><strong>60,000</strong></div><Tag tone="green">示例减少 31.8%</Tag></div></section><section className="panel evaluation"><h2>真实评估需要什么？</h2>{[['固定任务集','覆盖个人偏好、代码规范、项目事实与冲突。'],['相同模型与参数','记录模型版本、上下文上限及检索策略。'],['准确率人工标注','按任务检查召回事实、适用范围与来源。'],['计算完整成本','包含提炼、索引、检索及上下文注入。']].map(([a,b],i)=><div key={a}><span>{i+1}</span><div><h3>{a}</h3><p>{b}</p></div></div>)}<Tag tone="neutral">真实准确率：待评估</Tag></section></div><section className="panel"><div className="panel-heading"><h2>跨工具效果验证</h2><span className="muted">验证设计，未执行真实测试</span></div><div className="table-scroll"><table className="event-table"><thead><tr><th>测试场景</th><th>期望结果</th><th>证据要求</th><th>状态</th></tr></thead><tbody>{[['A 写入，B 召回','B 引用正确事实与来源','双工具调用记录与实际回答'],['局域网中断恢复','离线可读，恢复后处理版本差异','两台真实设备与故障恢复记录'],['CI 范围控制','仅召回获准项目记忆','真实 CI 日志与越权拒绝'],['过期与冲突记忆','旧结论被标记并保留来源','版本记录及人工评审']].map(row=><tr key={row[0]}>{row.map(t=><td key={t}>{t}</td>)}<td><Tag tone="neutral">待验证</Tag></td></tr>)}</tbody></table></div></section></>}
-
- {view==='settings'&&<>{pageHeader('设置','管理个人记忆的存储、提炼偏好与共享边界。')}<div className="settings-layout"><section className="panel"><div className="panel-heading"><h2>数据与存储</h2><HardDrive size={18}/></div><div className="setting-content"><label>当前存储方式</label><div className="path-field"><Database size={17}/><span>此浏览器 localStorage</span><Tag tone="neutral">原型</Tag></div><p>原型数据保存在当前浏览器。真实产品应由本机服务管理数据库及索引。</p><div className="storage-description"><div><span>数据体积</span><strong>{(byteSize/1024).toFixed(1)} KB</strong></div><div><span>记忆条数</span><strong>{data.memories.length}</strong></div><div><span>API 密钥</span><strong>不存储</strong></div></div><div className="setting-actions"><button className="btn" onClick={exportData}><ArrowDownToLine size={15}/>导出 JSON</button><button className="btn" onClick={()=>uploadRef.current.click()}><Upload size={15}/>导入 JSON</button></div></div></section><section className="panel"><div className="panel-heading"><h2>记忆偏好</h2><Sparkles size={18}/></div>{[['review','新记忆先审核','候选记忆由你确认后再进入记忆库。'],['preferences','允许提炼个人偏好','真实接入前需在对应工具中选择范围。'],['ci','CI 默认只读','自动化环境只读取获准项目的记忆。']].map(([key,title,body])=><div className="setting-row" key={key}><div><h3>{title}</h3><p>{body}</p></div><Switch label={title} checked={data.settings[key]} onChange={v=>setData(d=>({...d,settings:{...d.settings,[key]:v}}))}/></div>)}<p className="setting-note">此处保存配置意图；真实策略需要记忆服务执行。</p></section><section className="panel"><div className="panel-heading"><h2>演示数据</h2></div><div className="setting-row"><div><h3>恢复初始演示</h3><p>清除本原型的浏览器修改，恢复预置记忆与工具。</p></div><button className="btn danger" onClick={()=>setModal({type:'reset'})}>恢复演示</button></div></section></div></>}
- </main></div>
- <input type="file" hidden ref={uploadRef} accept=".json,application/json" onChange={importData}/>
- {toast&&<div className="toast" role="status"><CheckCheck size={18}/>{toast}<button className="icon-btn" aria-label="关闭提示" onClick={()=>setToast('')}><X size={15}/></button></div>}
- {selectedMemory&&<Modal title="记忆详情" drawer onClose={()=>setSelected(null)}><div className="drawer-body"><div className="detail-meta"><Tag tone="green">{selectedMemory.status==='active'?'已入库':'已归档'}</Tag><Tag>{selectedMemory.type}</Tag><span>v{selectedMemory.revision}</span></div><h2>{selectedMemory.title}</h2><p className="detail-body">{selectedMemory.body}</p><dl className="detail-list"><div><dt>所属项目</dt><dd>{selectedMemory.project}</dd></div><div><dt>来源 Agent</dt><dd>{selectedMemory.source}</dd></div><div><dt>共享范围</dt><dd>{selectedMemory.scope}</dd></div><div><dt>演示调用</dt><dd>{selectedMemory.uses} 次</dd></div><div><dt>更新日期</dt><dd>{selectedMemory.updated.slice(0,10)}</dd></div></dl><h3>来源与依据</h3><div className="evidence detail-evidence"><FileText size={17}/><span>{selectedMemory.provenance}</span></div><p className="small-note muted">所有预置内容为演示资料，未读取真实 Agent 对话。真实接入应提供原始来源定位。</p><div className="detail-history"><History size={17}/><div><strong>版本 {selectedMemory.revision}</strong><p>当前内容及来源已保存在此浏览器中。</p></div></div></div><div className="drawer-footer"><button className="btn" onClick={()=>{updateMemory(selectedMemory.id,{status:selectedMemory.status==='active'?'archived':'active'});notify(selectedMemory.status==='active'?'已归档，可在已归档列表恢复':'已恢复到记忆库');setSelected(null);}}>{selectedMemory.status==='active'?'归档':'恢复'}</button><button className="btn" onClick={()=>copy(selectedMemory.body)}><Copy size={15}/>复制</button><button className="btn primary" onClick={()=>{setModal({type:'memory',edit:selectedMemory});setSelected(null);}}>编辑记忆</button></div></Modal>}
- {chosenAgent&&<Modal title={`${chosenAgent.name} 接入配置`} drawer onClose={()=>setAgentSelected(null)}><div className="drawer-body"><div className="agent-detail-head"><AgentMark agent={chosenAgent}/><div><h2>{chosenAgent.name}</h2><p>{chosenAgent.kind}</p></div><Tag tone="neutral">演示配置</Tag></div><div className="info-banner"><CircleHelp size={18}/><p>这里只保存原型配置，不修改真实工具配置文件或建立网络连接。</p></div><label className="form-label" htmlFor="agent-access">访问权限</label><select id="agent-access" className="full-select" value={chosenAgent.permission} onChange={e=>setData(d=>({...d,agents:d.agents.map(a=>a.name===chosenAgent.name?{...a,permission:e.target.value}:a)}))}><option value="read">只读 · 可检索已确认的记忆</option><option value="readwrite">读写 · 可提交候选记忆</option></select><h3>建议的接入顺序</h3><ol className="ordered-help"><li>确认工具名称、版本与受支持的协议。</li><li>配置本机记忆服务的受限连接。</li><li>用同一条事实完成写入与跨工具召回。</li><li>验证撤销、范围控制和断线恢复。</li></ol><div className="scope-card"><ShieldCheck size={21}/><div><strong>个人记忆访问</strong><p>项目与来源由记忆服务校验，执行授权单独管理。</p></div></div></div><div className="drawer-footer"><button className="btn" onClick={()=>setAgentSelected(null)}>关闭</button><button className="btn primary" onClick={()=>{const next=chosenAgent.status==='connected'?'paused':'connected';setData(d=>({...d,agents:d.agents.map(a=>a.name===chosenAgent.name?{...a,status:next}:a),events:log(d,'更新演示连接',`${chosenAgent.name}：${next==='connected'?'已连接':'已暂停'}`)}));notify(next==='connected'?'已设为演示连接，真实协议尚未验证':'已暂停演示连接');setAgentSelected(null);}}>{chosenAgent.status==='connected'?<Unplug size={16}/>:<Link2 size={16}/>}{chosenAgent.status==='connected'?'暂停演示连接':'设为演示连接'}</button></div></Modal>}
- {modal&&<Modal title={modal.type==='memory'?(modal.edit?'编辑记忆':'添加一条记忆'):modal.type==='pair'?'添加局域网设备':modal.type==='reset'?'恢复初始演示？':modal.type==='connect'?'选择要接入的 Agent':modal.type==='workspace'?'我的个人空间':modal.type==='importError'?'无法导入文件':modal.type==='integration'?'终端与 CI 接入设计':modal.type==='export'?'导出个人记忆':'KARMEN Memory 使用指南'} onClose={()=>setModal(null)}>
- {modal.type==='memory'?<form onSubmit={saveMemory} className="memory-form"><label>记忆标题<input name="title" required maxLength={120} placeholder="例如：提交信息使用英文" defaultValue={modal.edit?.title}/></label><label>记忆内容<textarea name="body" required maxLength={3000} rows={4} placeholder="写下明确的事实、偏好或规范，以及它适用的范围。" defaultValue={modal.edit?.body}/></label><div className="form-grid"><label>类型<select name="type" defaultValue={modal.edit?.type||'个人偏好'}>{['个人偏好','项目需求','代码规范','架构决策','工作方式'].map(t=><option key={t}>{t}</option>)}</select></label><label>所属项目<input name="project" maxLength={80} defaultValue={modal.edit?.project||'全部项目'} required/></label></div><label>共享范围<select name="scope" defaultValue={modal.edit?.scope||'全设备'}><option>全设备</option><option>仅本机</option></select></label><p className="form-help"><LockKeyhole size={14}/>内容仅保存在此浏览器的演示空间中。</p><div className="modal-actions"><button type="button" className="btn" onClick={()=>setModal(null)}>取消</button><button className="btn primary" type="submit">保存记忆</button></div></form>:
- modal.type==='pair'?<form className="memory-form" onSubmit={e=>{e.preventDefault();if(!data.lan){setPairError('请先在设备页开启局域网共享演示。');return;}if(pairCode!=='246810'){setPairError('演示配对码不正确，请输入 246810。');return;}setData(d=>({...d,devices:[...d.devices,{id:crypto.randomUUID(),name:pairName.trim()||'新设备'}],events:log(d,'添加演示设备',pairName)}));setModal(null);notify('已添加模拟设备，未进行真实网络配对');}}><p className="modal-intro">使用另一台设备上的配对码确认连接。本原型固定演示码为 <strong className="mono">246810</strong>。</p><label>设备名称<input required maxLength={50} value={pairName} onChange={e=>setPairName(e.target.value)}/></label><label>6 位配对码<input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} placeholder="246810" required value={pairCode} onChange={e=>setPairCode(e.target.value)}/></label>{pairError&&<p role="alert" className="form-error">{pairError}</p>}<p className="form-help"><ShieldCheck size={14}/>真实配对需由两台设备确认身份与共享范围。</p><div className="modal-actions"><button type="button" className="btn" onClick={()=>setModal(null)}>取消</button><button className="btn primary">确认演示配对</button></div></form>:
- modal.type==='connect'?<div className="connect-options"><p>优先配置 Koder、Koder CLI 与 Cursor，再接入更多工具。</p>{data.agents.map(a=><button key={a.name} onClick={()=>{setModal(null);setAgentSelected(a.name);}}><AgentMark agent={a} small/><strong>{a.name}</strong><span>{a.featured?a.role:a.kind}</span><ChevronRight size={16}/></button>)}</div>:
- modal.type==='export'?<div className="standard-modal"><p>导出 {data.memories.length} 条演示记忆，包括已归档内容。JSON 仅包含本原型中的记忆字段。</p><textarea className="export-json" aria-label="导出 JSON 内容" readOnly value={JSON.stringify({schema:'karmen-memory-console-demo',version:1,memories:data.memories},null,2)}/><div className="modal-actions"><button className="btn" onClick={()=>copy(JSON.stringify({schema:'karmen-memory-console-demo',version:1,memories:data.memories},null,2))}><Copy size={15}/>复制 JSON</button><button className="btn primary" onClick={downloadData}><ArrowDownToLine size={15}/>下载 JSON</button></div></div>:
- modal.type==='reset'?<div className="standard-modal"><p>你在本原型中创建的记忆、审核结果、设备和配置将被清除。此操作只影响本浏览器的演示数据。</p><div className="modal-actions"><button className="btn" onClick={()=>setModal(null)}>取消</button><button className="btn primary" onClick={()=>{setData(initial());setFilter('全部记忆');setTypeFilter('全部类型');setSearch('');setProject('全部项目');setResults(null);setModal(null);notify('已恢复初始演示数据');}}>恢复演示</button></div></div>:
- modal.type==='importError'?<div className="standard-modal"><p role="alert" className="form-error">{importError}</p><p>支持本原型导出的 JSON；单文件不超过 1 MB，最多 500 条记录。</p><div className="modal-actions"><button className="btn primary" onClick={()=>{setModal(null);uploadRef.current.click();}}>重新选择文件</button></div></div>:
- modal.type==='workspace'?<div className="standard-modal"><div className="workspace-summary"><span className="workspace-avatar">B</span><div><h3>Boris 的个人空间</h3><p>{active.length} 条记忆 · {connected.length} 个演示连接</p></div></div><p>当前为单人个人空间。每个 Agent 的访问范围在接入配置中管理，局域网设备需要分别授权。</p><button className="btn primary" onClick={()=>{setModal(null);go('settings');}}>管理个人空间<ArrowRight size={15}/></button></div>:
- modal.type==='integration'?<div className="standard-modal"><p>产品接入采用统一的本机记忆服务，Skill、MCP、CLI 适配器负责传递任务上下文。以下为建议合同，尚未实现。</p><div className="contract-list"><div><code>memory.search</code><span>按项目、任务与权限检索已确认记忆</span></div><div><code>memory.propose</code><span>提交带来源的候选事实，进入提炼审核</span></div><div><code>memory.feedback</code><span>记录召回是否有用，修正过期与错误事实</span></div></div><p>CI 使用只读、项目范围、短期凭据；Mac 桌面端通过本机服务工作。每个工具需要独立验证兼容性。</p></div>:
- <div className="standard-modal"><p>KARMEN Memory 将个人偏好、项目事实和代码规范沉淀为结构化记忆，供获准工具按需检索。</p><ol className="ordered-help"><li>在「记忆库」创建或导入记忆，查看来源与版本。</li><li>在「Agent 接入」设置工具及读写范围。</li><li>在「记忆提炼」确认候选并处理范围冲突。</li><li>在「局域网设备」体验共享与配对流程。</li><li>在「检索体验」查看关键词匹配与上下文预览。</li></ol><div className="info-banner"><CircleHelp size={19}/><p>这是一套交互原型。真实数据库、自动提炼、网络同步、加密和工具协议尚未实现。</p></div></div>}
- </Modal>}
- </div>;
+const types = ["个人偏好", "项目需求", "代码规范", "架构决策", "工作方式"];
+const icons = {
+  overview: LayoutDashboard,
+  database: Database,
+  search: Search,
+  blocks: Blocks,
+  network: Network,
+  sparkles: Sparkles,
+  activity: Activity,
+  chart: ChartNoAxesCombined,
+  settings: Settings,
+  terminal: Terminal,
+  code: Code2,
+  workflow: Workflow,
+  layers: Layers,
+  cloud: Cloud,
+  monitor: Monitor,
+  cursor: MousePointer2,
+};
+const when = (time) =>
+  time ? new Date(time).toLocaleString("zh-CN", { hour12: false }) : "尚无请求";
+function Icon({ name, size = 18 }) {
+  const C = icons[name] || Database;
+  return <C size={size} strokeWidth={1.65} aria-hidden="true" />;
 }
-createRoot(document.getElementById('root')).render(<App/>);
+function Tag({ children, tone = "" }) {
+  return <span className={`tag ${tone}`}>{children}</span>;
+}
+function AgentMark({ agent }) {
+  return (
+    <span aria-hidden="true" className={`agent-mark ${agent.color}`}>
+      <span className={agent.firstParty ? "koder-monogram" : "agent-glyph"}>
+        {agent.firstParty ? (
+          <span>K{agent.name === "Koder CLI" && <small>_</small>}</span>
+        ) : (
+          <Icon name={agent.icon} size={21} />
+        )}
+      </span>
+    </span>
+  );
+}
+function Empty({ title, body, action }) {
+  return (
+    <div className="empty">
+      <Database size={28} />
+      <h3>{title}</h3>
+      <p>{body}</p>
+      {action}
+    </div>
+  );
+}
+function Switch({ checked, onChange, label, disabled }) {
+  return (
+    <button
+      disabled={disabled}
+      className={`switch ${checked ? "on" : ""}`}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+    >
+      <span />
+    </button>
+  );
+}
+function Modal({ children, onClose, title, drawer = false }) {
+  const ref = useRef();
+  useEffect(() => {
+    const dialog = ref.current;
+    dialog.showModal();
+    return () => {
+      if (dialog.open) dialog.close();
+    };
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      className={drawer ? "drawer" : "modal"}
+      aria-labelledby="dialog-title"
+      onCancel={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="dialog-top">
+        <h2 id="dialog-title">{title}</h2>
+        <button className="icon-btn" aria-label="关闭" onClick={onClose}>
+          <X size={19} />
+        </button>
+      </div>
+      {children}
+    </dialog>
+  );
+}
+function FormFields({ memory = {}, prefix = "" }) {
+  return (
+    <>
+      <label>
+        标题
+        <input
+          name={`${prefix}title`}
+          required
+          maxLength={120}
+          defaultValue={memory.title}
+          placeholder="一条明确、可复用的事实"
+        />
+      </label>
+      <label>
+        内容
+        <textarea
+          name={`${prefix}body`}
+          required
+          maxLength={6000}
+          rows={5}
+          defaultValue={memory.body}
+          placeholder="补充适用条件与边界"
+        />
+      </label>
+      <div className="form-grid">
+        <label>
+          类型
+          <select
+            name={`${prefix}type`}
+            defaultValue={memory.type || "项目需求"}
+          >
+            {types.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          项目
+          <input
+            name={`${prefix}project`}
+            required
+            maxLength={80}
+            defaultValue={memory.project || "全部项目"}
+          />
+        </label>
+      </div>
+      <label>
+        共享范围
+        <select name={`${prefix}scope`} defaultValue={memory.scope || "仅本机"}>
+          <option>仅本机</option>
+          <option>全设备</option>
+        </select>
+      </label>
+      <label>
+        来源依据
+        <textarea
+          name={`${prefix}provenance`}
+          required
+          maxLength={6000}
+          rows={2}
+          defaultValue={memory.provenance || "用户手动创建"}
+        />
+      </label>
+    </>
+  );
+}
+const fields = (form) => Object.fromEntries(new FormData(form));
+
+function App() {
+  const [data, setData] = useState(null),
+    [connectionError, setConnectionError] = useState(""),
+    [busy, setBusy] = useState(false);
+  const [view, setView] = useState(
+    navItems.some((n) => n.id === location.hash.slice(1))
+      ? location.hash.slice(1)
+      : "overview",
+  );
+  const [search, setSearch] = useState(""),
+    [filter, setFilter] = useState("全部记忆"),
+    [typeFilter, setTypeFilter] = useState("全部类型"),
+    [project, setProject] = useState("全部项目");
+  const [selected, setSelected] = useState(null),
+    [history, setHistory] = useState([]),
+    [modal, setModal] = useState(null),
+    [toast, setToast] = useState(""),
+    [error, setError] = useState(""),
+    [mobile, setMobile] = useState(false);
+  const [query, setQuery] = useState(""),
+    [queryProject, setQueryProject] = useState("全部项目"),
+    [result, setResult] = useState(null),
+    [retrieving, setRetrieving] = useState(false),
+    [legacy, setLegacy] = useState(null);
+  const uploadRef = useRef(),
+    searchRef = useRef(),
+    pending = useRef(false);
+  async function refresh() {
+    const next = await api("/state");
+    setData(next);
+    setConnectionError("");
+    return next;
+  }
+  async function boot() {
+    try {
+      await connect();
+      await refresh();
+    } catch (e) {
+      setConnectionError(e.message);
+    }
+  }
+  useEffect(() => {
+    boot();
+    const timer = setInterval(() => {
+      if (!document.hidden && !pending.current)
+        refresh().catch((e) => setConnectionError(e.message));
+    }, 8000);
+    const focus = () => {
+      if (!pending.current)
+        refresh().catch((e) => setConnectionError(e.message));
+    };
+    window.addEventListener("focus", focus);
+    try {
+      const old = JSON.parse(
+        localStorage.getItem("karmen-memory-console-demo-v1"),
+      );
+      if (old?.version === 1 && old.data?.memories?.length)
+        setLegacy({
+          schema: "karmen-memory-console-demo",
+          version: 1,
+          memories: old.data.memories,
+        });
+    } catch {}
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", focus);
+    };
+  }, []);
+  useEffect(() => {
+    const f = () => {
+      const v = location.hash.slice(1);
+      if (navItems.some((n) => n.id === v)) setView(v);
+    };
+    window.addEventListener("hashchange", f);
+    return () => window.removeEventListener("hashchange", f);
+  }, []);
+  useEffect(() => {
+    const f = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", f);
+    return () => window.removeEventListener("keydown", f);
+  }, []);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 4500);
+    return () => clearTimeout(t);
+  }, [toast]);
+  const chosen = data?.memories.find((m) => m.id === selected);
+  useEffect(() => {
+    let current = true;
+    setHistory([]);
+    if (selected)
+      api(`/memories/${selected}/history`)
+        .then((value) => {
+          if (current) setHistory(value);
+        })
+        .catch((e) => {
+          if (current) setError(e.message);
+        });
+    return () => {
+      current = false;
+    };
+  }, [selected, chosen?.revision]);
+  const go = (id) => {
+    setView(id);
+    location.hash = id;
+    setMobile(false);
+    setError("");
+    window.scrollTo({ top: 0 });
+  };
+  async function mutate(
+    path,
+    input,
+    method = "POST",
+    message = "已保存",
+    close = true,
+  ) {
+    if (pending.current) return null;
+    pending.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const value = await api(path, input, method);
+      try {
+        await refresh();
+      } catch (e) {
+        setConnectionError(`操作已提交，刷新失败：${e.message}`);
+      }
+      if (close) setModal(null);
+      setToast(message);
+      return value;
+    } catch (e) {
+      setError(e.message);
+      return null;
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  }
+  async function copy(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setToast("已复制");
+    } catch {
+      setError("剪贴板不可用，请直接选择文本复制");
+    }
+  }
+  async function fileDownload(path, input, name) {
+    setBusy(true);
+    setError("");
+    try {
+      await download(path, input, name);
+      if (input) await refresh();
+      setToast("文件已准备，已请求浏览器下载");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function saveMemory(e) {
+    e.preventDefault();
+    const value = fields(e.currentTarget);
+    await mutate(
+      modal.edit ? `/memories/${modal.edit.id}` : "/memories",
+      { ...value, ...(modal.edit ? { revision: modal.edit.revision } : {}) },
+      modal.edit ? "PATCH" : "POST",
+      "记忆已写入 SQLite",
+    );
+  }
+  async function searchMemory(e) {
+    e?.preventDefault();
+    if (!query.trim()) return;
+    setRetrieving(true);
+    setError("");
+    try {
+      setResult(await api("/search", { query, project: queryProject }));
+      await refresh();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setRetrieving(false);
+    }
+  }
+  async function importFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      if (file.size > 2_000_000) throw Error("JSON 文件超过 2 MB");
+      const value = JSON.parse(await file.text());
+      setModal({ type: "import", value, name: file.name });
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+  function credentialStatus(c) {
+    return c.status === "revoked"
+      ? "已撤销"
+      : c.status === "paused"
+        ? "已暂停"
+        : c.lastSeen
+          ? "已收到请求"
+          : "等待首次请求";
+  }
+  function agentStatus(a) {
+    const all = data.credentials.filter(
+      (c) => c.name === a.name && c.kind !== "device" && c.status !== "revoked",
+    );
+    const valid = all.filter((c) => c.status === "active");
+    return {
+      all,
+      valid,
+      observed: valid.filter((c) => c.lastSeen),
+      calls: all.reduce((s, c) => s + c.calls, 0),
+    };
+  }
+  if (!data)
+    return (
+      <div className="service-loading">
+        <Layers size={35} />
+        <h1>KARMEN Memory</h1>
+        <p role="status">{connectionError || "正在连接本地记忆服务…"}</p>
+        {connectionError && (
+          <>
+            <code>npm run build &amp;&amp; npm start</code>
+            <button className="btn primary" onClick={boot}>
+              重新连接
+            </button>
+          </>
+        )}
+      </div>
+    );
+  const active = data.memories.filter((m) => m.status === "active"),
+    candidates = data.candidates.filter((c) => c.status === "pending");
+  const observed = data.credentials.filter(
+    (c) => c.status === "active" && c.lastSeen && c.kind !== "device",
+  );
+  const devices = data.credentials.filter((c) => c.kind === "device");
+  const projects = [
+    ...new Set(
+      data.memories.map((m) => m.project).filter((p) => p !== "全部项目"),
+    ),
+  ];
+  const filtered = data.memories.filter(
+    (m) =>
+      (filter === "已归档" ? m.status === "archived" : m.status === "active") &&
+      (filter !== "已收藏" || m.favorite) &&
+      (typeFilter === "全部类型" || m.type === typeFilter) &&
+      (project === "全部项目" || m.project === project) &&
+      `${m.title} ${m.body} ${m.source} ${m.project}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+  );
+  const mcpConfig = {
+    mcpServers: {
+      "karmen-memory": {
+        type: "stdio",
+        command: data.service.node,
+        args: [data.service.mcpPath],
+        env: {
+          KARMEN_MEMORY_TOKEN_FILE: "/PRIVATE/PATH/memory-token",
+          KARMEN_MEMORY_URL: data.service.url,
+        },
+      },
+    },
+  };
+  const evaluations = data.evaluations,
+    baseline = evaluations.reduce((s, r) => s + r.baseline, 0),
+    total = evaluations.reduce((s, r) => s + r.total, 0),
+    saving = baseline
+      ? (((baseline - total) / baseline) * 100).toFixed(1)
+      : null;
+  const title = navItems.find((n) => n.id === view)?.label;
+  function pageHeader(heading, description, action) {
+    return (
+      <div className="page-heading">
+        <div>
+          <h1>{heading}</h1>
+          <p>{description}</p>
+        </div>
+        {action}
+      </div>
+    );
+  }
+  function addButton() {
+    return (
+      <button
+        className="btn primary"
+        onClick={() => {
+          setError("");
+          setModal({ type: "memory" });
+        }}
+      >
+        <Plus size={17} />
+        添加记忆
+      </button>
+    );
+  }
+  function table(items, compact = false) {
+    return items.length ? (
+      <div className="table-scroll">
+        <table className={`memory-table ${compact ? "compact" : ""}`}>
+          <thead>
+            <tr>
+              <th>记忆内容</th>
+              <th>类型</th>
+              <th>来源</th>
+              {!compact && <th>项目</th>}
+              <th>更新</th>
+              <th>
+                <span className="sr-only">收藏</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((m) => (
+              <tr key={m.id}>
+                <td>
+                  <button
+                    className="memory-open"
+                    onClick={() => {
+                      setError("");
+                      setSelected(m.id);
+                    }}
+                  >
+                    <span className="memory-symbol">
+                      <FileText size={16} />
+                    </span>
+                    <span>
+                      <strong>{m.title}</strong>
+                      <small>{compact ? m.project : m.body}</small>
+                    </span>
+                  </button>
+                </td>
+                <td>
+                  <Tag
+                    tone={
+                      m.type === "个人偏好"
+                        ? "purple"
+                        : m.type === "代码规范"
+                          ? "blue"
+                          : "neutral"
+                    }
+                  >
+                    {m.type}
+                  </Tag>
+                </td>
+                <td>{m.source}</td>
+                {!compact && <td>{m.project}</td>}
+                <td className="muted">
+                  {m.updated.slice(5, 10).replace("-", "/")}
+                </td>
+                <td>
+                  <button
+                    disabled={busy}
+                    className={`icon-btn favorite ${m.favorite ? "selected" : ""}`}
+                    aria-label={`${m.favorite ? "取消收藏" : "收藏"}：${m.title}`}
+                    onClick={() =>
+                      mutate(
+                        `/memories/${m.id}`,
+                        { revision: m.revision, favorite: !m.favorite },
+                        "PATCH",
+                        "收藏状态已保存",
+                        false,
+                      )
+                    }
+                  >
+                    <Star
+                      size={16}
+                      fill={m.favorite ? "currentColor" : "none"}
+                    />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <Empty
+        title="这里还没有记忆"
+        body="添加明确事实，或从上下文提炼后审核入库。"
+        action={addButton()}
+      />
+    );
+  }
+  function agentCard(a, featured = false) {
+    const status = agentStatus(a);
+    return (
+      <section
+        className={`panel agent-card ${featured ? "featured-agent" : ""} ${a.firstParty ? "first-party-agent" : ""}`}
+        key={a.name}
+      >
+        <div className="agent-card-top">
+          <AgentMark agent={a} />
+          <Tag tone={a.firstParty ? "green" : "neutral"}>
+            {a.firstParty ? "KARMEN" : featured ? "常用编辑器" : "接入目标"}
+          </Tag>
+        </div>
+        <h2>{a.name}</h2>
+        <span className="agent-role">{a.role || a.kind}</span>
+        <p className="agent-description">
+          {a.description ||
+            "使用统一 API 或 MCP 桥接；宿主支持方式需单独确认。"}
+        </p>
+        <div className="agent-card-status">
+          <span className={status.observed.length ? "positive" : "muted"}>
+            <span
+              className={`status-dot ${status.observed.length ? "" : "off"}`}
+            />
+            {status.observed.length
+              ? "已收到凭证请求"
+              : status.valid.length
+                ? "等待首次请求"
+                : "尚未配置"}
+          </span>
+          <span>{status.valid.length} 个有效凭证</span>
+        </div>
+        <div className="agent-card-footer">
+          <span>{status.calls} 次真实请求</span>
+          <button
+            className="btn"
+            onClick={() => {
+              setError("");
+              setModal({ type: "agent", agent: a });
+            }}
+            aria-label={`配置 ${a.name}`}
+          >
+            配置接入
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      </section>
+    );
+  }
+  function topology() {
+    const left = catalog.filter((a) => a.featured),
+      right = catalog.filter((a) => !a.featured).slice(0, 3);
+    const node = (a, priority) => (
+      <button
+        className={`agent-node ${priority ? "priority-node" : ""}`}
+        key={a.name}
+        onClick={() => setModal({ type: "agent", agent: a })}
+        aria-label={`${a.name} 接入配置`}
+      >
+        <AgentMark agent={a} />
+        <span>
+          <strong>{a.name}</strong>
+          <small>
+            {agentStatus(a).observed.length ? "已收到请求" : "尚待宿主接入"}
+          </small>
+        </span>
+        <span
+          className={`status-dot ${agentStatus(a).observed.length ? "" : "off"}`}
+        />
+      </button>
+    );
+    return (
+      <>
+        <div className="topology-captions">
+          <span>优先工作工具</span>
+          <span>共享记忆</span>
+          <span>更多 Agent</span>
+        </div>
+        <div className="topology">
+          <svg
+            className="topology-lines"
+            viewBox="0 0 700 260"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path
+              className="priority-path"
+              d="M155 47 H235 Q260 47 260 73 V115 H340 M155 130 H340 M155 213 H235 Q260 213 260 187 V145 H340"
+            />
+            <path d="M360 115 H440 V73 Q440 47 465 47 H545 M360 130 H545 M360 145 H440 V187 Q440 213 465 213 H545" />
+          </svg>
+          <div className="node-column priority-column">
+            {left.map((a) => node(a, true))}
+          </div>
+          <button
+            className="memory-core"
+            onClick={() => go("memories")}
+            aria-label="打开共享记忆库"
+          >
+            <span className="core-orbit">
+              <span>
+                <Layers size={32} strokeWidth={1.45} />
+              </span>
+            </span>
+            <strong>个人记忆库</strong>
+            <small>One memory. Every agent.</small>
+            <span className="core-count">{active.length} 条已确认记忆</span>
+          </button>
+          <div className="node-column">{right.map((a) => node(a))}</div>
+        </div>
+      </>
+    );
+  }
+  function credentialRow(c) {
+    return (
+      <div className="credential-row" key={c.id}>
+        <div>
+          <strong>{c.name}</strong>
+          <small>
+            {c.project} · {c.permission === "read" ? "只读" : "提议与读取"} ·{" "}
+            {c.calls} 次请求
+          </small>
+          <small>
+            {credentialStatus(c)} · {when(c.lastSeen)}
+          </small>
+        </div>
+        {c.status !== "revoked" && (
+          <div className="button-row">
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={() =>
+                mutate(
+                  `/credentials/${c.id}`,
+                  { status: c.status === "paused" ? "active" : "paused" },
+                  "PATCH",
+                  "权限已变更",
+                  false,
+                )
+              }
+            >
+              {c.status === "paused" ? "恢复" : "暂停"}
+            </button>
+            <button
+              className="btn danger"
+              disabled={busy}
+              onClick={() => setModal({ type: "revoke", credential: c })}
+            >
+              撤销
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+  const errorBox = error && (
+    <div className="form-error" role="alert">
+      <TriangleAlert size={17} />
+      {error}
+    </div>
+  );
+  return (
+    <div className="app-shell">
+      <a href="#main-content" className="skip-link">
+        跳到主内容
+      </a>
+      {mobile && (
+        <button
+          className="sidebar-scrim"
+          aria-label="关闭导航"
+          onClick={() => setMobile(false)}
+        />
+      )}
+      <aside className={`sidebar ${mobile ? "mobile-open" : ""}`}>
+        <button className="brand" onClick={() => go("overview")}>
+          <span className="brand-symbol">
+            <Layers size={23} />
+          </span>
+          <span>
+            KARMEN<span className="brand-sub">MEMORY</span>
+          </span>
+        </button>
+        <button className="workspace-btn" onClick={() => go("settings")}>
+          <span className="workspace-avatar">K</span>
+          <span>
+            <strong>我的个人空间</strong>
+            <small>Local workspace</small>
+          </span>
+          <ChevronsUpDown size={15} />
+        </button>
+        <nav aria-label="主导航">
+          {navItems.map((n, i) => (
+            <React.Fragment key={n.id}>
+              {(i === 0 || n.group !== navItems[i - 1].group) && (
+                <div className="nav-group">{n.group}</div>
+              )}
+              <button
+                className={`nav-item ${view === n.id ? "active" : ""}`}
+                aria-current={view === n.id ? "page" : undefined}
+                onClick={() => {
+                  go(n.id);
+                  setSearch("");
+                }}
+              >
+                <Icon name={n.icon} />
+                <span>{n.label}</span>
+                {n.id === "pipeline" && candidates.length > 0 && (
+                  <b className="count-badge">{candidates.length}</b>
+                )}
+              </button>
+            </React.Fragment>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="local-engine">
+            <span className="engine-icon">
+              <HardDrive size={18} />
+            </span>
+            <div>
+              <strong>
+                本地记忆服务{" "}
+                <span
+                  className={`status-dot ${connectionError ? "off" : ""}`}
+                />
+              </strong>
+              <small>
+                SQLite · {connectionError ? "连接中断" : "本机运行中"}
+              </small>
+            </div>
+          </div>
+          <button
+            className="help-link"
+            onClick={() => setModal({ type: "help" })}
+          >
+            <CircleHelp size={17} />
+            使用指南
+            <ArrowUpRight size={14} />
+          </button>
+          <button className="user-profile" onClick={() => go("settings")}>
+            <span className="profile-avatar">K</span>
+            <span>
+              <strong>个人记忆</strong>
+              <small>由本机用户管理</small>
+            </span>
+            <Settings size={16} />
+          </button>
+        </div>
+      </aside>
+      <div className="main-shell">
+        <header className="topbar">
+          <div className="breadcrumb">
+            <button
+              className="icon-btn mobile-menu"
+              aria-label="打开导航"
+              onClick={() => setMobile(true)}
+            >
+              <Menu size={21} />
+            </button>
+            <span>个人空间</span>
+            <ChevronRight size={13} />
+            <strong>{title}</strong>
+          </div>
+          <div className="topbar-right">
+            <label className="global-search">
+              <Search size={16} />
+              <input
+                ref={searchRef}
+                aria-label="全局搜索记忆"
+                placeholder="搜索你的记忆…"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  if (view !== "memories") go("memories");
+                }}
+              />
+              <kbd>⌘ K</kbd>
+            </label>
+            <span className="demo-label">本地服务 0.2</span>
+            <button
+              className="icon-btn notifications"
+              aria-label={`通知：${candidates.length} 条待审核`}
+              onClick={() => go("pipeline")}
+            >
+              <Bell size={19} />
+              {candidates.length > 0 && <span />}
+            </button>
+            <span className="top-avatar">K</span>
+          </div>
+        </header>
+        <main id="main-content" tabIndex={-1}>
+          {connectionError && (
+            <div className="form-error" role="alert">
+              连接中断：{connectionError}
+              <button className="btn" onClick={boot}>
+                重新连接
+              </button>
+            </div>
+          )}
+          {!modal && errorBox}
+          {view === "overview" && (
+            <>
+              {pageHeader(
+                "让工作接续，让记忆共通。",
+                "从 Koder、Koder CLI 到 Cursor，把确认过的事实交给下一次工作。",
+                <div className="heading-actions">
+                  <button
+                    className="btn"
+                    onClick={() => uploadRef.current.click()}
+                  >
+                    <Upload size={16} />
+                    导入记忆
+                  </button>
+                  {addButton()}
+                </div>,
+              )}
+              <div className="overview-status">
+                <span>
+                  <span className="live-dot" />
+                  本地 SQLite
+                </span>
+                <i />
+                <span>
+                  <ShieldCheck size={14} />
+                  工具权限由服务校验
+                </span>
+                <i />
+                <span className="muted">所有数字来自实际记录</span>
+              </div>
+              <div className="stats-grid">
+                {[
+                  [
+                    "已确认记忆",
+                    active.length,
+                    "条",
+                    "保留来源、范围与修订",
+                    Database,
+                  ],
+                  [
+                    "有请求的凭证",
+                    observed.length,
+                    "个",
+                    "请求来源由凭证标识，宿主需另验",
+                    Blocks,
+                  ],
+                  [
+                    "真实检索",
+                    data.stats.queries,
+                    "次",
+                    `命中 ${data.stats.hits} 次 · 本机词项检索`,
+                    Search,
+                  ],
+                  [
+                    "评估样本",
+                    evaluations.length,
+                    "组",
+                    saving === null
+                      ? "尚无 Token 成本评估记录"
+                      : `用户记录的总成本变化 ${saving}%`,
+                    ChartNoAxesCombined,
+                  ],
+                ].map(([label, value, unit, detail, C]) => (
+                  <div className="stat" key={label}>
+                    <div>
+                      <span>{label}</span>
+                      <C size={17} />
+                    </div>
+                    <strong>
+                      {value}
+                      <small>{unit}</small>
+                    </strong>
+                    <p>{detail}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="overview-main">
+                <section className="panel connections-panel">
+                  <div className="panel-heading">
+                    <div>
+                      <h2>围绕你的 Koder 工作流</h2>
+                      <p>桌面、终端与编辑器，访问同一份已确认上下文。</p>
+                    </div>
+                    <button className="text-link" onClick={() => go("agents")}>
+                      管理接入
+                      <ArrowUpRight size={14} />
+                    </button>
+                  </div>
+                  {topology()}
+                  <div className="connection-footer">
+                    <span>{observed.length} 个凭证已发起请求</span>
+                    <span>
+                      <LockKeyhole size={14} />
+                      逐凭证控制项目范围
+                    </span>
+                    <button onClick={() => go("devices")}>
+                      局域网{" "}
+                      <span
+                        className={`status-dot ${data.lan.enabled ? "" : "off"}`}
+                      />
+                      {data.lan.enabled ? "HTTPS 已启动" : "未开启"}
+                      <ChevronRight size={13} />
+                    </button>
+                  </div>
+                </section>
+                <section className="panel health-panel">
+                  <div className="panel-heading">
+                    <h2>记忆状态</h2>
+                    <ShieldCheck size={18} />
+                  </div>
+                  <div className="storage-row">
+                    <span className="storage-icon">
+                      <Database size={22} />
+                    </span>
+                    <div>
+                      <strong>个人记忆库</strong>
+                      <small>SQLite · 事务写入</small>
+                    </div>
+                    <Tag tone="green">可用</Tag>
+                  </div>
+                  <dl className="health-details">
+                    <div>
+                      <dt>数据库与 WAL</dt>
+                      <dd>{(data.stats.size / 1024).toFixed(1)} KB</dd>
+                    </div>
+                    <div>
+                      <dt>项目</dt>
+                      <dd>{projects.length} 个独立项目</dd>
+                    </div>
+                    <div>
+                      <dt>待审核</dt>
+                      <dd>{candidates.length} 条候选</dd>
+                    </div>
+                  </dl>
+                  <div className="review-callout">
+                    <span>
+                      <Sparkles size={17} />
+                      让记忆先经过确认
+                    </span>
+                    <p>工具提议只进入候选，审核后才参与检索。</p>
+                    <button
+                      className="text-link"
+                      onClick={() => go("pipeline")}
+                    >
+                      提炼与审核
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                  <div className="privacy-note">
+                    <ShieldCheck size={15} />
+                    <span>记忆内容不授予工具执行权限</span>
+                  </div>
+                </section>
+              </div>
+              <div className="overview-bottom">
+                <section className="panel recent-panel">
+                  <div className="panel-heading">
+                    <h2>
+                      最近的记忆{" "}
+                      <span className="heading-count">{active.length}</span>
+                    </h2>
+                    <button
+                      className="text-link"
+                      onClick={() => go("memories")}
+                    >
+                      查看全部
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                  {table(active.slice(0, 4), true)}
+                </section>
+                <section className="panel activity-panel">
+                  <div className="panel-heading">
+                    <h2>实际动态</h2>
+                    <button
+                      className="icon-btn"
+                      aria-label="查看全部调用记录"
+                      onClick={() => go("activity")}
+                    >
+                      <ArrowUpRight size={17} />
+                    </button>
+                  </div>
+                  {data.events.length ? (
+                    <div className="timeline">
+                      {data.events.slice(0, 3).map((e) => (
+                        <div className="timeline-item" key={e.id}>
+                          <span className="timeline-symbol">
+                            <Activity size={15} />
+                          </span>
+                          <div>
+                            <strong>
+                              {e.agent}
+                              <span>{e.action}</span>
+                            </strong>
+                            <p>{e.detail}</p>
+                            <small>{when(e.time)}</small>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Empty
+                      title="等待第一次操作"
+                      body="创建记忆、审核和工具请求都会留下记录。"
+                    />
+                  )}
+                </section>
+              </div>
+              <div className="page-foot">
+                <span>
+                  <Layers size={14} />
+                  One memory. Every agent.
+                </span>
+                <span>本地优先 · 按需检索 · 由你确认</span>
+              </div>
+            </>
+          )}
+          {view === "memories" && (
+            <>
+              {pageHeader(
+                "记忆库",
+                "每条事实都有来源、范围和真实修订历史。",
+                addButton(),
+              )}
+              <div className="memory-toolbar">
+                <div className="tabs">
+                  {["全部记忆", "已收藏", "已归档"].map((t) => (
+                    <button
+                      key={t}
+                      className={filter === t ? "active" : ""}
+                      onClick={() => setFilter(t)}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <div className="toolbar-controls">
+                  <label className="filter-select">
+                    <Filter size={15} />
+                    <select
+                      aria-label="按记忆类型筛选"
+                      value={typeFilter}
+                      onChange={(e) => setTypeFilter(e.target.value)}
+                    >
+                      {["全部类型", ...types].map((t) => (
+                        <option key={t}>{t}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <select
+                    aria-label="按项目筛选"
+                    value={project}
+                    onChange={(e) => setProject(e.target.value)}
+                  >
+                    {["全部项目", ...projects].map((p) => (
+                      <option key={p}>{p}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="btn"
+                    onClick={() =>
+                      fileDownload("/export", null, "karmen-memory.json")
+                    }
+                  >
+                    <ArrowDownToLine size={15} />
+                    导出
+                  </button>
+                </div>
+              </div>
+              <section className="panel">
+                <div className="list-info">
+                  <span>
+                    你的个人记忆 <b>{filtered.length} 条</b>
+                  </span>
+                  <label className="inline-search">
+                    <Search size={16} />
+                    <input
+                      aria-label="搜索记忆库"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="搜索内容、来源、项目"
+                    />
+                  </label>
+                </div>
+                {table(filtered)}
+                <div className="table-footer">
+                  共 {filtered.length} 条<span>从本地数据库读取</span>
+                </div>
+              </section>
+            </>
+          )}
+          {view === "agents" && (
+            <>
+              {pageHeader(
+                "Agent 接入",
+                "签发独立凭证，通过统一 API、CLI 或 MCP 使用记忆。",
+                <button
+                  className="btn primary"
+                  onClick={() => setModal({ type: "credential" })}
+                >
+                  <Plus size={17} />
+                  新建访问凭证
+                </button>,
+              )}
+              <div className="featured-section-title">
+                <div>
+                  <h2>优先工作工具</h2>
+                  <p>先接桌面、终端和编辑器。配置步骤与请求记录始终可查。</p>
+                </div>
+                <span className="tool-total">
+                  {observed.length} 个凭证收到请求
+                </span>
+              </div>
+              <div className="featured-agent-grid">
+                {catalog
+                  .filter((a) => a.featured)
+                  .map((a) => agentCard(a, true))}
+              </div>
+              <div className="section-line more-tools-heading">
+                <h2>更多工具</h2>
+                <span>协议支持需在各自宿主核实</span>
+              </div>
+              <div className="agent-grid">
+                {catalog.filter((a) => !a.featured).map((a) => agentCard(a))}
+              </div>
+              <section className="panel credential-panel">
+                <div className="panel-heading">
+                  <h2>访问凭证</h2>
+                  <span>首次请求会更新最后访问时间</span>
+                </div>
+                {data.credentials.filter((c) => c.kind !== "device").length ? (
+                  data.credentials
+                    .filter((c) => c.kind !== "device")
+                    .map(credentialRow)
+                ) : (
+                  <Empty
+                    title="还没有访问凭证"
+                    body="先为工具签发项目范围和读写权限，再配置客户端。"
+                  />
+                )}
+              </section>
+              <div className="info-banner">
+                <ShieldCheck size={19} />
+                <p>
+                  调用次数表示凭证收到的真实请求。凭证名称由你填写，不能据此证明对应宿主已完成集成。
+                </p>
+              </div>
+            </>
+          )}
+          {view === "retrieve" && (
+            <>
+              {pageHeader(
+                "检索体验",
+                "检索已确认事实，检查匹配词、来源与交给 Agent 的上下文。",
+              )}
+              <section className="panel retrieval-query">
+                <div className="retrieval-icon">
+                  <Search size={25} />
+                </div>
+                <h2>这个任务需要记住什么？</h2>
+                <p>本机多语言词项检索，不调用外部模型。</p>
+                <form onSubmit={searchMemory}>
+                  <input
+                    aria-label="检索问题"
+                    maxLength={500}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="输入你要查找的规范、偏好或项目需求"
+                  />
+                  <button
+                    className="btn primary"
+                    disabled={!query.trim() || retrieving}
+                  >
+                    {retrieving ? (
+                      <RefreshCw size={17} className="spinning" />
+                    ) : (
+                      <ArrowRight size={18} />
+                    )}
+                    检索
+                  </button>
+                </form>
+                <label className="query-project">
+                  项目范围
+                  <select
+                    value={queryProject}
+                    onChange={(e) => setQueryProject(e.target.value)}
+                  >
+                    {["全部项目", ...projects].map((p) => (
+                      <option key={p}>{p}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="retrieval-disclaimer">
+                  按词项和标题加权排序 · 未配置向量或语义模型
+                </div>
+              </section>
+              {result && (
+                <>
+                  <div className="section-line">
+                    <h2>检索结果 · {result.hits.length} 条</h2>
+                    <span>
+                      {result.duration} ms · {result.project}
+                    </span>
+                  </div>
+                  {result.hits.length ? (
+                    result.hits.map((m) => (
+                      <section className="panel result-card" key={m.id}>
+                        <div className="result-meta">
+                          <Tag tone="green">匹配分 {m.score}</Tag>
+                          <span>
+                            {m.project} · r{m.revision}
+                          </span>
+                        </div>
+                        <button
+                          className="result-title"
+                          onClick={() => setSelected(m.id)}
+                        >
+                          {m.title}
+                          <ArrowUpRight size={15} />
+                        </button>
+                        <p>{m.body}</p>
+                        <small>
+                          匹配：{m.matched.join("、")} · 来源：{m.source}
+                        </small>
+                      </section>
+                    ))
+                  ) : (
+                    <section className="panel">
+                      <Empty
+                        title="没有相关记忆"
+                        body="尝试已有标题中的关键词，或先添加并确认事实。"
+                      />
+                    </section>
+                  )}
+                  {result.context && (
+                    <section className="panel context-panel">
+                      <div className="panel-heading">
+                        <h2>准备给 Agent 的上下文</h2>
+                        <button
+                          className="btn"
+                          onClick={() => copy(result.context)}
+                        >
+                          <Copy size={14} />
+                          复制
+                        </button>
+                      </div>
+                      <pre>{result.context}</pre>
+                      <p className="small-note">
+                        这些内容是上下文数据，不能覆盖工具权限或执行审批。
+                      </p>
+                    </section>
+                  )}
+                </>
+              )}
+            </>
+          )}
+          {view === "pipeline" && (
+            <>
+              {pageHeader(
+                "记忆提炼",
+                "输入明确需求，用本地规则生成候选；确认范围后再入库。",
+                <Tag tone="green">{candidates.length} 条待审核</Tag>,
+              )}
+              <section className="panel extraction-panel">
+                <form
+                  className="memory-form"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const form = e.currentTarget;
+                    const value = await mutate(
+                      "/extract",
+                      fields(form),
+                      "POST",
+                      "提炼结果已保存",
+                      false,
+                    );
+                    if (value) {
+                      form.reset();
+                      setToast(
+                        `生成 ${value.candidates.length} 条候选，跳过 ${value.duplicates} 条重复${value.truncated ? "；本次最多处理 20 句" : ""}`,
+                      );
+                    }
+                  }}
+                >
+                  <label>
+                    上下文
+                    <textarea
+                      name="text"
+                      required
+                      minLength={8}
+                      maxLength={20000}
+                      rows={4}
+                      placeholder="例如：提交信息必须使用英文。新项目使用 TypeScript strict 模式。"
+                    />
+                  </label>
+                  <div className="form-grid">
+                    <label>
+                      项目
+                      <input
+                        name="project"
+                        required
+                        defaultValue="全部项目"
+                        maxLength={80}
+                      />
+                    </label>
+                    <label>
+                      共享范围
+                      <select name="scope">
+                        <option>仅本机</option>
+                        <option>全设备</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="form-actions">
+                    <span className="muted">
+                      识别明确偏好、要求与约定，保留逐句依据。
+                    </span>
+                    <button className="btn primary" disabled={busy}>
+                      <Sparkles size={16} />
+                      提炼候选
+                    </button>
+                  </div>
+                </form>
+              </section>
+              <div className="section-line">
+                <h2>待确认的记忆</h2>
+                <span>规则提炼 · 审核后参与检索</span>
+              </div>
+              {candidates.length ? (
+                candidates.map((c) => (
+                  <section
+                    className={`panel candidate ${c.related.length ? "has-conflict" : ""}`}
+                    key={c.id}
+                  >
+                    <div className="candidate-meta">
+                      <Tag tone={c.related.length ? "amber" : "green"}>
+                        {c.related.length ? "发现相近记忆" : "建议审核"}
+                      </Tag>
+                      <span>
+                        {c.source} · {when(c.created)}
+                      </span>
+                    </div>
+                    <h2>{c.title}</h2>
+                    <p>{c.body}</p>
+                    <div className="evidence">
+                      <FileText size={16} />
+                      <span>来源依据：{c.provenance}</span>
+                    </div>
+                    {c.related.length > 0 && (
+                      <div className="conflict-box">
+                        <strong>
+                          <TriangleAlert size={16} />
+                          请核对是否重复或冲突
+                        </strong>
+                        {c.related.map((r) => (
+                          <p key={r.id}>
+                            {r.title}：{r.body}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    <div className="candidate-actions">
+                      <span>
+                        <Folder size={14} />
+                        {c.project} · {c.type} · {c.scope}
+                      </span>
+                      <div>
+                        <button
+                          disabled={busy}
+                          className="btn"
+                          onClick={() =>
+                            mutate(
+                              `/candidates/${c.id}`,
+                              { revision: c.revision, decision: "reject" },
+                              "POST",
+                              "已排除候选",
+                            )
+                          }
+                        >
+                          排除
+                        </button>
+                        <button
+                          className="btn primary"
+                          onClick={() =>
+                            setModal({ type: "review", candidate: c })
+                          }
+                        >
+                          <Check size={15} />
+                          编辑并确认
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+                ))
+              ) : (
+                <section className="panel">
+                  <Empty
+                    title="没有待处理候选"
+                    body="输入上下文，或让获准工具通过 memory_propose 提交事实。"
+                  />
+                </section>
+              )}
+              <p className="small-note muted">
+                规则可能遗漏隐含信息，也不能可靠判断语义冲突。原始整段输入不留存，只保存候选的逐句依据。
+              </p>
+            </>
+          )}
+          {view === "devices" && (
+            <>
+              {pageHeader(
+                "局域网设备",
+                "通过 HTTPS 访问这台电脑的主记忆库，逐台配对与撤权。",
+                <button
+                  className="btn primary"
+                  disabled={!data.lan.enabled}
+                  onClick={() => setModal({ type: "pair" })}
+                >
+                  <Plus size={17} />
+                  生成配对码
+                </button>,
+              )}
+              <section className="panel setting-row lan-setting">
+                <span className="large-icon">
+                  <Network size={25} />
+                </span>
+                <div>
+                  <h2>局域网记忆共享</h2>
+                  <p>
+                    {data.lan.enabled
+                      ? `HTTPS 正在监听端口 ${data.lan.port}，仅配对设备可访问。`
+                      : "仅本机使用。开启时生成私有 TLS 证书并启动共享端口。"}
+                  </p>
+                </div>
+                <Switch
+                  label="局域网记忆共享"
+                  checked={data.lan.enabled}
+                  disabled={busy}
+                  onChange={(enabled) =>
+                    mutate(
+                      "/lan",
+                      { enabled },
+                      "POST",
+                      enabled ? "HTTPS 共享服务已启动" : "共享端口已关闭",
+                      false,
+                    )
+                  }
+                />
+              </section>
+              {data.lan.error && (
+                <div className="form-error">{data.lan.error}</div>
+              )}
+              {data.lan.enabled && (
+                <section className="panel connection-details">
+                  <h2>共享地址与信任证书</h2>
+                  <div className="code-box">
+                    <pre>
+                      {data.lan.addresses.join("\n") ||
+                        `https://127.0.0.1:${data.lan.port}`}
+                    </pre>
+                    <button
+                      className="icon-btn"
+                      aria-label="复制共享地址"
+                      onClick={() => copy(data.lan.addresses.join("\n"))}
+                    >
+                      <Copy size={16} />
+                    </button>
+                  </div>
+                  <p>
+                    将证书通过你信任的方式复制到另一台电脑，核对下面的 SHA-256
+                    指纹，再执行配对。
+                  </p>
+                  <code className="fingerprint">{data.lan.fingerprint}</code>
+                  <button
+                    className="btn"
+                    onClick={() =>
+                      fileDownload("/certificate", null, "karmen-memory-ca.pem")
+                    }
+                  >
+                    <ArrowDownToLine size={15} />
+                    下载公开证书
+                  </button>
+                </section>
+              )}
+              <div className="devices-grid">
+                <section className="panel device-card">
+                  <div className="device-illustration">
+                    <Monitor size={65} strokeWidth={1.1} />
+                    <Tag tone="green">主节点</Tag>
+                  </div>
+                  <h2>{data.service.hostname}</h2>
+                  <p>{data.service.platform} · SQLite 源数据库</p>
+                  <dl>
+                    <div>
+                      <dt>共享状态</dt>
+                      <dd>{data.lan.enabled ? "HTTPS 运行中" : "仅本机"}</dd>
+                    </div>
+                    <div>
+                      <dt>已配对凭证</dt>
+                      <dd>{data.lan.paired} 个</dd>
+                    </div>
+                  </dl>
+                </section>
+                {devices.map((c) => (
+                  <section className="panel device-card" key={c.id}>
+                    <div className="device-illustration">
+                      <Server size={59} strokeWidth={1.1} />
+                      <Tag>{credentialStatus(c)}</Tag>
+                    </div>
+                    <h2>{c.name}</h2>
+                    <p>
+                      {c.project} ·{" "}
+                      {c.permission === "read" ? "只读" : "提议与读取"}
+                    </p>
+                    <dl>
+                      <div>
+                        <dt>最近请求</dt>
+                        <dd>{when(c.lastSeen)}</dd>
+                      </div>
+                      <div>
+                        <dt>真实请求</dt>
+                        <dd>{c.calls} 次</dd>
+                      </div>
+                      <div>
+                        <dt>可见范围</dt>
+                        <dd>仅全设备记忆</dd>
+                      </div>
+                    </dl>
+                    {c.status !== "revoked" && (
+                      <button
+                        className="btn danger"
+                        onClick={() =>
+                          setModal({ type: "revoke", credential: c })
+                        }
+                      >
+                        移除设备
+                        <Unplug size={14} />
+                      </button>
+                    )}
+                  </section>
+                ))}
+              </div>
+              <div className="info-banner">
+                <ShieldCheck size={19} />
+                <p>
+                  这是主节点共享访问。主节点离线时，其他电脑无法检索；尚未实现离线副本同步。API
+                  密钥和执行授权不随记忆共享。
+                </p>
+              </div>
+            </>
+          )}
+          {view === "activity" && (
+            <>
+              {pageHeader(
+                "调用记录",
+                "保存服务实际处理的操作、检索与拒绝结果。",
+                <button
+                  className="btn"
+                  onClick={() => refresh().catch((e) => setError(e.message))}
+                >
+                  <RefreshCw size={15} />
+                  刷新
+                </button>,
+              )}
+              <section className="panel">
+                <div className="list-info">
+                  <span>
+                    最近 {data.events.length} 条{" "}
+                    <b>共 {data.stats.eventCount} 条</b>
+                  </span>
+                  <Tag>持久化审计</Tag>
+                </div>
+                {data.events.length ? (
+                  <div className="table-scroll">
+                    <table className="memory-table activity-table">
+                      <thead>
+                        <tr>
+                          <th>时间</th>
+                          <th>调用方 / 操作</th>
+                          <th>结果</th>
+                          <th>说明</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.events.map((e) => (
+                          <tr key={e.id}>
+                            <td>{when(e.time)}</td>
+                            <td>
+                              <strong>{e.agent}</strong>
+                              <small>{e.action}</small>
+                            </td>
+                            <td>
+                              <Tag
+                                tone={e.status === "成功" ? "green" : "amber"}
+                              >
+                                {e.status}
+                              </Tag>
+                            </td>
+                            <td>
+                              {e.detail}
+                              {e.duration !== undefined && (
+                                <small>{e.duration} ms</small>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <Empty
+                    title="还没有调用记录"
+                    body="记录来自实际操作，不会预填示例活动。"
+                  />
+                )}
+              </section>
+            </>
+          )}
+          {view === "analytics" && (
+            <>
+              {pageHeader(
+                "效果评估",
+                "分开观察实际检索与任务成本，先记录依据，再比较结果。",
+                <button
+                  className="btn primary"
+                  onClick={() => setModal({ type: "evaluation" })}
+                >
+                  <Plus size={16} />
+                  记录对照样本
+                </button>,
+              )}
+              <div className="stats-grid">
+                <div className="stat">
+                  <div>实际检索</div>
+                  <strong>
+                    {data.stats.queries}
+                    <small>次</small>
+                  </strong>
+                  <p>服务记录的词项检索</p>
+                </div>
+                <div className="stat">
+                  <div>非空结果</div>
+                  <strong>
+                    {data.stats.queries
+                      ? ((data.stats.hits / data.stats.queries) * 100).toFixed(
+                          1,
+                        )
+                      : "—"}
+                    <small>{data.stats.queries ? "%" : ""}</small>
+                  </strong>
+                  <p>表示找到词项，不代表答案准确率</p>
+                </div>
+                <div className="stat">
+                  <div>平均检索耗时</div>
+                  <strong>
+                    {data.stats.queries ? data.stats.averageMs.toFixed(2) : "—"}
+                    <small>ms</small>
+                  </strong>
+                  <p>服务内排序，不包含网络与模型</p>
+                </div>
+                <div className="stat">
+                  <div>已记录总成本变化</div>
+                  <strong>
+                    {saving ?? "—"}
+                    <small>{saving === null ? "" : "%"}</small>
+                  </strong>
+                  <p>{evaluations.length} 组用户录入样本</p>
+                </div>
+              </div>
+              <section className="panel benchmark-panel">
+                <div className="panel-heading">
+                  <h2>可追溯的任务对照</h2>
+                  <Tag>用户记录 · 非自动基准</Tag>
+                </div>
+                {evaluations.length ? (
+                  <div className="table-scroll">
+                    <table className="memory-table">
+                      <thead>
+                        <tr>
+                          <th>任务 / 模型</th>
+                          <th>无记忆 Token</th>
+                          <th>记忆总成本</th>
+                          <th>结果依据</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {evaluations.map((r) => (
+                          <tr key={r.id}>
+                            <td>
+                              <strong>{r.task}</strong>
+                              <small>{r.model}</small>
+                            </td>
+                            <td>{r.baseline}</td>
+                            <td>
+                              {r.total}
+                              <small>
+                                上下文 {r.context} + 提炼 {r.extraction} + 索引{" "}
+                                {r.indexing} + 检索 {r.retrieval}
+                              </small>
+                            </td>
+                            <td>{r.evidence}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <Empty
+                    title="还没有对照样本"
+                    body="使用相同模型、任务和配置，记录全链路 Token 成本与结果依据。"
+                  />
+                )}
+              </section>
+              <div className="info-banner">
+                <ChartNoAxesCombined size={20} />
+                <p>
+                  当前没有跨工具准确率或“节省
+                  1/3”的实测结论。这里的百分比仅由已录入样本计算，负值表示成本增加。
+                </p>
+              </div>
+            </>
+          )}
+          {view === "settings" && (
+            <>
+              {pageHeader("设置", "管理真实存储、数据备份和 CI 访问边界。")}
+              <section className="panel settings-section">
+                <h2>
+                  <Database size={19} />
+                  本地存储
+                </h2>
+                <dl className="service-facts">
+                  <div>
+                    <dt>数据库</dt>
+                    <dd>
+                      <code>{data.service.database}</code>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>服务版本</dt>
+                    <dd>
+                      {data.service.version} · SQLite schema{" "}
+                      {data.service.schema}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>实例编号</dt>
+                    <dd>
+                      <code>{data.service.instance}</code>
+                    </dd>
+                  </div>
+                </dl>
+                <p className="small-note">
+                  数据库文件由本机用户保护，未实现应用层静态加密。工具凭证只保存哈希，原始凭证不进入备份导出
+                  JSON。
+                </p>
+              </section>
+              <section className="panel settings-section">
+                <h2>
+                  <ArrowDownToLine size={19} />
+                  导入、导出与恢复
+                </h2>
+                <p>
+                  JSON 包含事实、来源与生命周期；SQLite
+                  快照保留完整历史和审计。导入按内容去重，使用新编号。
+                </p>
+                <div className="button-row">
+                  <button
+                    className="btn"
+                    disabled={busy}
+                    onClick={() =>
+                      fileDownload("/export", null, "karmen-memory.json")
+                    }
+                  >
+                    导出记忆 JSON
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() => uploadRef.current.click()}
+                  >
+                    导入 JSON
+                  </button>
+                  <button
+                    className="btn primary"
+                    disabled={busy}
+                    onClick={() =>
+                      fileDownload("/backup", {}, "karmen-memory-backup.sqlite")
+                    }
+                  >
+                    创建 SQLite 快照
+                  </button>
+                </div>
+                {legacy && (
+                  <div className="legacy-banner">
+                    <p>
+                      检测到旧浏览器原型中的 {legacy.memories.length}{" "}
+                      条记录。请先确认内容，再导入正式记忆库。
+                    </p>
+                    <button
+                      className="btn"
+                      onClick={() =>
+                        setModal({
+                          type: "import",
+                          value: legacy,
+                          name: "旧浏览器原型",
+                        })
+                      }
+                    >
+                      检查并导入旧数据
+                    </button>
+                    <button
+                      className="text-link"
+                      onClick={() => setLegacy(null)}
+                    >
+                      暂时隐藏
+                    </button>
+                  </div>
+                )}
+              </section>
+              <section className="panel settings-section">
+                <h2>
+                  <KeyRound size={19} />
+                  CI 访问
+                </h2>
+                <div className="setting-row">
+                  <div>
+                    <h3>允许项目只读凭证访问</h3>
+                    <p>
+                      CI 凭证必须限定具体项目；关闭后既有 CI
+                      凭证也会立即被拒绝。
+                    </p>
+                  </div>
+                  <Switch
+                    label="允许 CI 访问"
+                    checked={data.settings.ci}
+                    disabled={busy}
+                    onChange={(ci) =>
+                      mutate(
+                        "/settings",
+                        { ci },
+                        "PATCH",
+                        "CI 访问策略已生效",
+                        false,
+                      )
+                    }
+                  />
+                </div>
+                <button
+                  className="btn"
+                  onClick={() => setModal({ type: "credential", ci: true })}
+                >
+                  创建 CI 只读凭证
+                </button>
+              </section>
+              <section className="panel settings-section">
+                <h2>
+                  <ShieldCheck size={19} />
+                  使用边界
+                </h2>
+                <p>
+                  提炼采用本地句子规则，检索采用词项排序。联网模型、向量索引、宿主原生集成、离线副本同步与桌面安装包尚需单独实现及验收。
+                </p>
+                <button
+                  className="text-link"
+                  onClick={() => setModal({ type: "help" })}
+                >
+                  查看真实使用流程
+                  <ArrowRight size={14} />
+                </button>
+              </section>
+            </>
+          )}
+          <input
+            ref={uploadRef}
+            type="file"
+            accept=".json,application/json"
+            hidden
+            onChange={importFile}
+          />
+        </main>
+      </div>
+      {toast && (
+        <div className="toast" role="status">
+          <Check size={17} />
+          {toast}
+        </div>
+      )}
+      {chosen && !modal && (
+        <Modal drawer title="记忆详情" onClose={() => setSelected(null)}>
+          <div className="detail-content">
+            {errorBox}
+            <div className="detail-tags">
+              <Tag>{chosen.type}</Tag>
+              <Tag tone={chosen.status === "active" ? "green" : "neutral"}>
+                {chosen.status === "active" ? "生效中" : "已归档"}
+              </Tag>
+            </div>
+            <h3>{chosen.title}</h3>
+            <p className="memory-body">{chosen.body}</p>
+            <dl className="detail-meta">
+              <div>
+                <dt>项目</dt>
+                <dd>{chosen.project}</dd>
+              </div>
+              <div>
+                <dt>共享范围</dt>
+                <dd>{chosen.scope}</dd>
+              </div>
+              <div>
+                <dt>来源</dt>
+                <dd>{chosen.source}</dd>
+              </div>
+              <div>
+                <dt>修订</dt>
+                <dd>
+                  r{chosen.revision} · {when(chosen.updated)}
+                </dd>
+              </div>
+              <div>
+                <dt>编号</dt>
+                <dd>
+                  <code>{chosen.id}</code>
+                </dd>
+              </div>
+            </dl>
+            <div className="evidence">
+              <FileText size={16} />
+              <span>{chosen.provenance}</span>
+            </div>
+            <div className="button-row">
+              <button
+                className="btn primary"
+                onClick={() => setModal({ type: "memory", edit: chosen })}
+              >
+                编辑记忆
+              </button>
+              <button
+                className="btn"
+                disabled={busy}
+                onClick={() =>
+                  mutate(
+                    `/memories/${chosen.id}`,
+                    {
+                      revision: chosen.revision,
+                      status:
+                        chosen.status === "active" ? "archived" : "active",
+                    },
+                    "PATCH",
+                    "记忆状态已保存",
+                    false,
+                  )
+                }
+              >
+                {chosen.status === "active" ? "归档" : "恢复"}
+              </button>
+            </div>
+            <h3 className="history-heading">
+              <History size={17} />
+              修订历史
+            </h3>
+            <div className="revision-list">
+              {history.map((h) => (
+                <details key={h.revision}>
+                  <summary>
+                    r{h.revision} · {when(h.updated)} ·{" "}
+                    {h.status === "active" ? "生效" : "归档"}
+                  </summary>
+                  <strong>{h.title}</strong>
+                  <p>{h.body}</p>
+                  <small>
+                    {h.project} · {h.scope}
+                  </small>
+                </details>
+              ))}
+            </div>
+          </div>
+        </Modal>
+      )}
+      {modal && (
+        <Modal
+          title={
+            modal.type === "memory"
+              ? modal.edit
+                ? "编辑记忆"
+                : "添加记忆"
+              : modal.type === "agent"
+                ? `${modal.agent.name} 接入`
+                : modal.type === "credential"
+                  ? "新建访问凭证"
+                  : modal.type === "token"
+                    ? "保存访问凭证"
+                    : modal.type === "pair"
+                      ? "配对另一台电脑"
+                      : modal.type === "pairCode"
+                        ? "一次性配对码"
+                        : modal.type === "review"
+                          ? "确认候选记忆"
+                          : modal.type === "import"
+                            ? "导入记忆"
+                            : modal.type === "revoke"
+                              ? "撤销访问权限"
+                              : modal.type === "evaluation"
+                                ? "记录任务对照"
+                                : "使用指南"
+          }
+          onClose={() => {
+            if (!busy) {
+              setModal(null);
+              setError("");
+            }
+          }}
+        >
+          {errorBox}
+          {modal.type === "memory" && (
+            <form className="memory-form" onSubmit={saveMemory}>
+              <fieldset disabled={busy}>
+                <FormFields memory={modal.edit} />
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setModal(null)}
+                  >
+                    取消
+                  </button>
+                  <button className="btn primary">
+                    {busy ? "保存中…" : "保存到记忆库"}
+                  </button>
+                </div>
+              </fieldset>
+            </form>
+          )}
+          {modal.type === "review" && (
+            <form
+              className="memory-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const f = fields(e.currentTarget),
+                  target = data.memories.find((m) => m.id === f.supersedes);
+                await mutate(
+                  `/candidates/${modal.candidate.id}`,
+                  {
+                    revision: modal.candidate.revision,
+                    decision: f.decision,
+                    fact: {
+                      title: f.title,
+                      body: f.body,
+                      type: f.type,
+                      project: f.project,
+                      scope: f.scope,
+                      provenance: f.provenance,
+                    },
+                    supersedes: f.supersedes,
+                    targetRevision: target?.revision,
+                  },
+                  "POST",
+                  "候选已审核并入库",
+                );
+              }}
+            >
+              <fieldset disabled={busy}>
+                <FormFields memory={modal.candidate} />
+                <label>
+                  处理方式
+                  <select name="decision">
+                    <option value="append">
+                      独立保留（请在内容中写清适用范围）
+                    </option>
+                    <option value="supersede">
+                      替换同项目旧记忆（旧版本归档）
+                    </option>
+                  </select>
+                </label>
+                <label>
+                  如需替换，选择旧记忆
+                  <select name="supersedes">
+                    <option value="">不替换</option>
+                    {active.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.project} · {m.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="form-actions">
+                  <button className="btn primary">确认入库</button>
+                </div>
+              </fieldset>
+            </form>
+          )}
+          {modal.type === "agent" && (
+            <div className="setup-content">
+              <div className="setup-identity">
+                <AgentMark agent={modal.agent} />
+                <div>
+                  <h3>{modal.agent.name}</h3>
+                  <p>{modal.agent.kind}</p>
+                </div>
+              </div>
+              <ol>
+                <li>签发一个独立凭证，指定项目和读取/提议权限。</li>
+                <li>在宿主支持的 MCP、CLI 或 HTTP 扩展中配置服务地址。</li>
+                <li>
+                  执行一次检索，在本页核对最后请求时间和实际返回的记忆编号。
+                </li>
+              </ol>
+              <div className="info-banner">
+                <p>
+                  尚未更改此工具的本机配置。服务提供可运行的客户端，宿主协议与功能仍需单独核验。
+                </p>
+              </div>
+              {agentStatus(modal.agent).all.map(credentialRow)}
+              <button
+                className="btn primary"
+                onClick={() =>
+                  setModal({ type: "credential", name: modal.agent.name })
+                }
+              >
+                <KeyRound size={16} />
+                签发新凭证
+              </button>
+              <h3>MCP stdio 启动入口</h3>
+              <pre>{`${data.service.node} ${data.service.mcpPath}`}</pre>
+              <p>
+                使用 <code>KARMEN_MEMORY_TOKEN_FILE</code> 指向权限为 0600
+                的私有凭证文件，或通过宿主的环境变量配置凭证。
+              </p>
+              <h3>CLI 检索</h3>
+              <pre>
+                node bin/memory.mjs search "项目规范" --project YOUR_PROJECT
+              </pre>
+            </div>
+          )}
+          {modal.type === "credential" && (
+            <form
+              className="memory-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const f = fields(e.currentTarget);
+                const value = await mutate(
+                  "/credentials",
+                  f,
+                  "POST",
+                  "凭证已签发",
+                  false,
+                );
+                if (value) setModal({ type: "token", ...value });
+              }}
+            >
+              <fieldset disabled={busy}>
+                <label>
+                  工具名称
+                  <input
+                    name="name"
+                    required
+                    defaultValue={modal.name || (modal.ci ? "CI" : "")}
+                    list="tool-names"
+                    maxLength={80}
+                  />
+                  <datalist id="tool-names">
+                    {catalog.map((a) => (
+                      <option key={a.name}>{a.name}</option>
+                    ))}
+                  </datalist>
+                </label>
+                <label>
+                  客户端类型
+                  <select name="kind" defaultValue={modal.ci ? "ci" : "agent"}>
+                    <option value="agent">工具 / Agent</option>
+                    <option value="ci">CI（仅限具体项目只读）</option>
+                  </select>
+                </label>
+                <label>
+                  获准项目
+                  <input
+                    name="project"
+                    required
+                    maxLength={80}
+                    defaultValue={modal.ci ? "" : "*"}
+                    placeholder="具体项目；* 表示全部项目"
+                  />
+                </label>
+                <label>
+                  访问权限
+                  <select name="permission">
+                    <option value="read">只读</option>
+                    <option value="readwrite">读取与提议（写入需审核）</option>
+                  </select>
+                </label>
+                <p className="small-note">
+                  令牌只显示一次。名称用于你的记录，不是宿主身份认证。
+                </p>
+                <div className="form-actions">
+                  <button className="btn primary">签发凭证</button>
+                </div>
+              </fieldset>
+            </form>
+          )}
+          {modal.type === "token" && (
+            <div className="setup-content">
+              <Tag tone="green">已签发 · 等待首次请求</Tag>
+              <p>
+                {modal.credential.name} · {modal.credential.project} ·{" "}
+                {modal.credential.permission === "read" ? "只读" : "读取与提议"}
+              </p>
+              <p>
+                立即保存到你的私有凭证文件。关闭后无法再次查看，丢失时撤销并重新签发。
+              </p>
+              <div className="code-box secret">
+                <pre>{modal.token}</pre>
+                <button
+                  className="icon-btn"
+                  aria-label="复制访问凭证"
+                  onClick={() => copy(modal.token)}
+                >
+                  <Copy size={16} />
+                </button>
+              </div>
+              <h3>MCP 配置示例</h3>
+              <pre>{JSON.stringify(mcpConfig, null, 2)}</pre>
+              <button
+                className="btn"
+                onClick={() => copy(JSON.stringify(mcpConfig, null, 2))}
+              >
+                复制配置模板
+              </button>
+            </div>
+          )}
+          {modal.type === "revoke" && (
+            <div className="setup-content">
+              <p>
+                撤销 {modal.credential.name}{" "}
+                的凭证后，下一次请求会立即被拒绝。重新接入需要签发新凭证。
+              </p>
+              <div className="form-actions">
+                <button className="btn" onClick={() => setModal(null)}>
+                  取消
+                </button>
+                <button
+                  className="btn danger"
+                  disabled={busy}
+                  onClick={() =>
+                    mutate(
+                      `/credentials/${modal.credential.id}`,
+                      { status: "revoked" },
+                      "PATCH",
+                      "访问权限已撤销",
+                    )
+                  }
+                >
+                  确认撤销
+                </button>
+              </div>
+            </div>
+          )}
+          {modal.type === "pair" && (
+            <form
+              className="memory-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const value = await mutate(
+                  "/pairing",
+                  fields(e.currentTarget),
+                  "POST",
+                  "已生成一次性配对码",
+                  false,
+                );
+                if (value) setModal({ type: "pairCode", ...value });
+              }}
+            >
+              <label>
+                允许共享的项目
+                <input
+                  name="project"
+                  required
+                  defaultValue="*"
+                  maxLength={80}
+                />
+              </label>
+              <label>
+                设备权限
+                <select name="permission">
+                  <option value="read">只读</option>
+                  <option value="readwrite">读取与提议</option>
+                </select>
+              </label>
+              <p className="small-note">
+                只共享“全设备”范围事实。新配对码会使旧码失效，5
+                分钟内仅可使用一次。
+              </p>
+              <div className="form-actions">
+                <button className="btn primary" disabled={busy}>
+                  生成配对码
+                </button>
+              </div>
+            </form>
+          )}
+          {modal.type === "pairCode" && (
+            <div className="setup-content">
+              <div className="pair-code-display">{modal.code}</div>
+              <p>有效期至 {when(modal.expiresAt)} · 一次使用 · 最多 5 次尝试</p>
+              <p>先在另一台电脑保存证书文件，并核对指纹，再执行：</p>
+              <pre>{`node bin/memory.mjs pair --url ${modal.lan.addresses[0] || `https://127.0.0.1:${modal.lan.port}`} --ca ./karmen-memory-ca.pem --code ${modal.code} --name "My other computer"`}</pre>
+              <p>
+                配对成功会创建权限为 0600
+                的客户端配置；客户端与主节点使用同一个数据库服务。
+              </p>
+            </div>
+          )}
+          {modal.type === "import" && (
+            <div className="setup-content">
+              <p>文件：{modal.name}</p>
+              <p>
+                待校验{" "}
+                {Array.isArray(modal.value?.memories)
+                  ? modal.value.memories.length
+                  : "未知"}{" "}
+                条记录。导入会校验完整文件、跳过内容重复项，并分配新编号。
+              </p>
+              <p>旧原型包含演示内容，请确认这些记录确实是你要保留的事实。</p>
+              <div className="form-actions">
+                <button className="btn" onClick={() => setModal(null)}>
+                  取消
+                </button>
+                <button
+                  className="btn primary"
+                  disabled={busy}
+                  onClick={async () => {
+                    const value = await mutate(
+                      "/import",
+                      modal.value,
+                      "POST",
+                      "导入完成",
+                    );
+                    if (value)
+                      setToast(
+                        `已导入 ${value.imported.length} 条，跳过重复 ${value.duplicates} 条`,
+                      );
+                  }}
+                >
+                  确认导入
+                </button>
+              </div>
+            </div>
+          )}
+          {modal.type === "evaluation" && (
+            <form
+              className="memory-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const f = fields(e.currentTarget);
+                for (const key of [
+                  "baseline",
+                  "context",
+                  "extraction",
+                  "indexing",
+                  "retrieval",
+                ])
+                  f[key] = Number(f[key]);
+                await mutate("/evaluations", f, "POST", "对照样本已保存");
+              }}
+            >
+              <fieldset disabled={busy}>
+                <label>
+                  任务
+                  <input name="task" required maxLength={120} />
+                </label>
+                <label>
+                  模型与配置
+                  <input name="model" required maxLength={160} />
+                </label>
+                <div className="form-grid">
+                  {[
+                    ["baseline", "无记忆基线 Token"],
+                    ["context", "有记忆上下文 Token"],
+                    ["extraction", "提炼 Token"],
+                    ["indexing", "索引 Token"],
+                    ["retrieval", "检索 Token"],
+                  ].map(([name, label]) => (
+                    <label key={name}>
+                      {label}
+                      <input
+                        name={name}
+                        type="number"
+                        min={name === "baseline" ? 1 : 0}
+                        max={1000000000}
+                        step={1}
+                        required
+                        defaultValue={
+                          name === "baseline" || name === "context" ? "" : 0
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+                <label>
+                  实际结果与依据
+                  <textarea
+                    name="evidence"
+                    required
+                    rows={3}
+                    maxLength={2000}
+                    placeholder="记录任务是否完成、输出质量与可追溯运行编号"
+                  />
+                </label>
+                <p className="small-note">
+                  这里保存你输入的测量结果，不会自动执行模型评估。
+                </p>
+                <div className="form-actions">
+                  <button className="btn primary">保存样本</button>
+                </div>
+              </fieldset>
+            </form>
+          )}
+          {modal.type === "help" && (
+            <div className="setup-content">
+              <ol>
+                <li>
+                  在记忆库直接保存事实，或在“记忆提炼”粘贴明确上下文，编辑并确认候选。
+                </li>
+                <li>
+                  在 Agent 接入为工具签发独立凭证，设置项目和读取/提议权限。
+                </li>
+                <li>
+                  配置 CLI 或 MCP 桥接，执行检索；在调用记录核对返回和拒绝结果。
+                </li>
+                <li>
+                  共享到其他电脑时开启
+                  HTTPS、复制公开证书并核对指纹，然后生成配对码。
+                </li>
+                <li>
+                  定期导出 JSON 或创建 SQLite
+                  快照。恢复完整快照前停止服务，备份旧数据库，再替换
+                  memory.sqlite；不要覆盖运行中的 WAL 数据库。
+                </li>
+              </ol>
+              <p>
+                当前不自动读取聊天历史、不修改宿主配置。宿主集成、两台实体电脑互通、语义检索与成本收益需要各自验证。
+              </p>
+            </div>
+          )}
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<App />);

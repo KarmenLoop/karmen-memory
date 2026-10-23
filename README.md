@@ -1,149 +1,148 @@
 # KARMEN Memory
 
-An interactive console prototype for reviewing personal memory across Koder, Koder CLI, Cursor, and other agent tools.
+A local SQLite memory service and administration console for sharing confirmed personal context across agent tools.
 
 [![Build](https://github.com/KarmenLoop/karmen-memory/actions/workflows/verify.yml/badge.svg)](https://github.com/KarmenLoop/karmen-memory/actions/workflows/verify.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-39704e)](LICENSE)
-[![Status: Prototype](https://img.shields.io/badge/status-interactive%20prototype-64748b)](#project-status)
-[![Release](https://img.shields.io/github/v/release/KarmenLoop/karmen-memory?include_prereleases)](https://github.com/KarmenLoop/karmen-memory/releases)
+[![Status: Local alpha](https://img.shields.io/badge/status-local%20alpha-64748b)](#project-status)
 
-[Downloads](https://github.com/KarmenLoop/karmen-memory/releases) · [Quickstart](#quickstart) · [Skill](#use-the-skill) · [Design](docs/design.md) · [Validation](docs/validation.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [License](LICENSE)
+[Quickstart](#quickstart) · [CLI and MCP](docs/integration.md) · [Skills](#skills) · [Validation](docs/validation.md) · [Security](SECURITY.md) · [Downloads](https://github.com/KarmenLoop/karmen-memory/releases)
 
-![KARMEN Memory overview with Koder, Koder CLI, and Cursor leading the shared-memory workflow](docs/images/overview-desktop.png)
+![The local memory console, with Koder, Koder CLI, and Cursor first](docs/images/overview-desktop.png)
 
-*An actual browser capture of the included Chinese-language interface. Memories, tool connections, device pairing, and evaluation figures are clearly labeled examples.*
+## What it does
 
-## Overview
+KARMEN Memory keeps facts in one local service. The browser console, command-line client, and MCP bridge read the same SQLite database. Koder, Koder CLI, and Cursor lead the console in that order; other tools can use the same client contracts where their host supports them.
 
-KARMEN Memory explores how one personal memory library can support work across a desktop assistant, a terminal, and an editor. Koder, Koder CLI, and Cursor lead the interface in that order. Other tools appear in a separate group and keep their own access settings.
+- Create, edit, favorite, archive, restore, and inspect immutable memory revisions.
+- Extract explicit sentences with local rules, remove duplicates, and review candidates before retrieval.
+- Retrieve approved facts using multilingual lexical matching, with source, project, revision, matching terms, and prepared context.
+- Issue independent project-scoped credentials. Enforce read-only access, CI policy, pause, and revocation in the service.
+- Share the primary service over optional HTTPS with certificate verification and one-time device pairing.
+- Export facts as JSON, import validated records atomically, and create consistent SQLite snapshots.
+- Inspect actual activity and retrieval timing. Record task comparisons with all token-cost components.
 
-The console makes memories inspectable: what a fact says, which project it belongs to, where it came from, and whether it should remain active. It also includes a portable design skill for extending these interfaces and preparing a real memory-service integration.
-
-This repository supplies a working browser prototype and design contract. It does not install a memory framework, connect to real agents, or synchronize databases between computers.
-
-## What works
-
-- Create, edit, search, filter, favorite, archive, and restore memories.
-- Import and export JSON, preserving validated lifecycle, provenance, and version fields.
-- Review candidate facts and keep conflicting statements with an explicit scope.
-- Try local keyword retrieval and inspect the context prepared for an agent.
-- Configure simulated tool access and device pairing, with visible error states.
-- Inspect activity and evaluation examples.
-- Keep prototype changes in the current browser across reloads.
-
-The interface has nine pages: overview, memory library, retrieval, agent access, LAN devices, candidate review, activity, evaluation, and settings. Fonts and icons are bundled locally; the running preview needs no remote font or image requests.
+A fresh installation has no seeded memories, connections, activity, or savings figures. The screenshots contain synthetic facts created through the actual browser form during acceptance.
 
 ## Quickstart
 
-Use Node.js 22.12 or newer and npm.
+Requires Node.js **22.16 or newer** and npm. Node 22 reports its built-in SQLite driver as experimental. LAN certificate generation also needs OpenSSL with `req -addext` support.
 
 ```sh
 git clone https://github.com/KarmenLoop/karmen-memory.git
 cd karmen-memory
 npm ci
-npm run dev -- --port 5186 --strictPort
+npm run build
+npm start
 ```
 
-Open [http://127.0.0.1:5186](http://127.0.0.1:5186). If that port is occupied, choose another port with the same option. The preview binds to loopback.
+Open [http://127.0.0.1:4318](http://127.0.0.1:4318). The console and owner endpoints bind to loopback. The default database is `~/.karmen-memory/memory.sqlite`.
 
-To build and serve the static application:
+For development with the UI on port 5186 and the service on 4318:
 
 ```sh
-npm run build
-npm run preview -- --port 5187 --strictPort
+npm run dev -- --port 5186
 ```
 
-Open [http://127.0.0.1:5187](http://127.0.0.1:5187). The static output is in `dist/`.
+Open [http://127.0.0.1:5186](http://127.0.0.1:5186). Stop either command with Ctrl-C. Keep one service process per data directory. Set `KARMEN_MEMORY_HOME` to choose an isolated data directory, and `KARMEN_MEMORY_PORT` to change the production service port. The development proxy uses port 4318.
 
-Release downloads also include a prebuilt preview. After extracting it, serve its directory with a local static server. The included `PREVIEW.md` explains the commands.
+```sh
+npm test
+```
 
-See [Getting started](docs/getting-started.md) for the first memory, candidate review, pairing demo, data export, and reset flow.
+See [Getting started](docs/getting-started.md) for the complete first-fact workflow and recovery instructions.
 
-## Koder-first workflow
+## CLI and MCP
 
-![Agent access page with Koder, Koder CLI, and Cursor in the priority section](docs/images/agents-desktop.png)
+Create a credential under **Agent access**. Save the one-time token to a private file with mode `0600`, and set `KARMEN_MEMORY_TOKEN_FILE` to that path. Do not commit the file.
 
-| Priority tool | Intended role | Current implementation |
-| --- | --- | --- |
-| Koder | Desktop work and project context | Simulated access settings |
-| Koder CLI | Terminal work and automation | Simulated access settings |
-| Cursor | Editor context and implementation | Simulated access settings |
+```sh
+export KARMEN_MEMORY_TOKEN_FILE="/private/path/memory-token"
+node bin/memory.mjs status
+node bin/memory.mjs search "commit convention" --project "My Project"
+```
 
-Codex, Claude Code, Hermes, Qoder, Workbody, DSH, Cloud Code, and Open Cloud PI appear under more tools. These are proposed integration targets. Exact product names, versions, and supported protocols must be checked before building adapters.
+Read/write credentials can propose facts; a person must review them before retrieval:
 
-The priority order is consistent across the overview, access page, and tool picker. Pausing a priority tool keeps its place. Catalog upgrades add missing entries while preserving existing memories and access settings.
+```sh
+node bin/memory.mjs propose --title "Commit convention" \
+  --body "Use English commit messages and describe the reason for the change." \
+  --project "My Project" --scope local --evidence "Project owner's requirement"
+```
 
-## Use the skill
+MCP hosts can launch `node /absolute/path/karmen-memory/bin/mcp.mjs`. It exposes `memory_search`, `memory_propose`, `memory_extract`, and `memory_feedback` over stdio. The bridge calls the same authenticated service; it does not create a separate memory store. See [Integration](docs/integration.md) for configuration, HTTP contracts, CI, pairing, and permissions.
 
-The portable skill is in [`skills/shared-memory-console`](skills/shared-memory-console/SKILL.md). It guides an agent in designing or extending memory administration pages: provenance, candidate review, retrieval explanations, access controls, and trusted devices.
+The supplied CLI is the **KARMEN Memory client**. It does not replace or rename Koder CLI or Koder Open CLI. Installed host configurations are not changed automatically.
 
-Copy the complete folder into a skill directory supported by your agent host. For a fresh user-level installation in a host that reads `~/.agents/skills`:
+## LAN sharing
+
+Sharing starts disabled. Enable it in **LAN devices**, copy the public certificate to the other computer through a trusted channel, compare its SHA-256 fingerprint, and generate a five-minute one-use pairing code. On the other computer:
+
+```sh
+node bin/memory.mjs pair --url https://HOST_IP:4319 \
+  --ca ./karmen-memory-ca.pem --code PAIRING_CODE --name "My second computer"
+```
+
+The client saves a private profile. A paired device sees only facts marked **全设备**, within its granted project. Closing sharing stops the listener; revoking its credential rejects subsequent requests. Clean service shutdown also turns sharing off. A public certificate contains no private key.
+
+This is access to a primary service. It does not replicate databases or provide a remote offline cache. Keep the primary computer running while remote clients use it. Two physical computers have not yet been tested together.
+
+## Skills
+
+- [`karmen-memory`](skills/karmen-memory/SKILL.md): retrieve approved facts and submit sourced proposals using the running service.
+- [`shared-memory-console`](skills/shared-memory-console/SKILL.md): design and extend memory administration interfaces.
+
+Copy a complete skill folder to a directory supported by your host, preserving its license and notices. For a host reading `~/.agents/skills`, a fresh installation can use:
 
 ```sh
 mkdir -p ~/.agents/skills
-cp -R skills/shared-memory-console ~/.agents/skills/
+cp -R skills/karmen-memory ~/.agents/skills/
 ```
 
-Keep the references and legal notices with the skill. Check an existing installation before replacing it. A host that supports named skill invocation can use:
-
-```text
-Use $shared-memory-console to extend KARMEN Memory's candidate review page.
-Preserve the current memory-service contract and show the source and scope
-of each fact. Keep sample data clearly labeled until the service is connected.
-```
-
-Loading this skill does not start a database, create a network service, or grant access to another tool.
+Check an existing installation before replacing it. A skill describes use of an installed service; copying it alone does not start SQLite or configure credentials.
 
 ## Project status
 
-The initial release is a **prerelease prototype**. It includes source, a static build, screenshots, design documentation, and the portable skill.
+Version 0.2.0 is a **local alpha**. The previous v0.1.0 release remains a historical browser prototype.
 
-| Area | Status |
+| Area | Current evidence |
 | --- | --- |
-| Browser interactions and localStorage persistence | Implemented and checked locally |
-| Desktop and 390px layouts | Checked in browser emulation |
-| Keyword retrieval | Implemented as a local demonstration |
-| Real database and extraction framework | Not integrated |
-| Semantic search and embeddings | Not integrated |
-| Real Koder, Koder CLI, Cursor, or other adapters | Not integrated |
-| Authenticated LAN sharing and device synchronization | Not implemented |
-| CI access policy enforcement by a memory service | Not implemented |
-| Measured recall accuracy or cost savings | Not evaluated |
+| SQLite storage, revisions, transactions, restart, JSON and snapshot recovery | Tested with isolated real databases |
+| Authenticated project scope, read-only, CI policy, revocation | Tested through actual HTTP requests |
+| CLI and MCP stdio | Tested as independent processes against the service |
+| HTTPS listener and device pairing | Tested with independent local TLS clients |
+| Browser forms and responsive layouts | See the current validation record |
+| Native Koder, Koder CLI, Cursor and other host integration | Requires each installed host's runtime acceptance |
+| Two physical LAN computers | Not yet tested |
+| Semantic search, embeddings, model extraction | Not implemented; current methods are lexical and rule-based |
+| Offline replication, native Mac installer, Windows runtime | Not delivered or accepted |
+| Recall accuracy and model token savings | No measured result; user-entered samples are labeled separately |
 
-The 31.8% figure is an illustrative comparison of 88,000 and 60,000 tokens, not a benchmark result. A real evaluation must include extraction, indexing, retrieval, and context costs. See [Validation](docs/validation.md).
+## Data and security
 
-## Data and privacy
+The service stores local facts, evidence, revision snapshots, candidates, events, evaluations, and credential hashes. It does not automatically read agent chat histories, call a model, or send memory to third parties. Owner sessions are limited to the local machine with Host/Origin and CSRF checks. Tool access uses revocable random bearer credentials. The operating-system user is the local trust boundary.
 
-Sample memories and prototype changes are stored under `karmen-memory-console-demo-v1` in the current browser's localStorage. The application does not read real agent histories, credentials, or personal databases. It does not send prototype memory contents to a model or another device.
+Database and credential files are not encrypted by the application. Use operating-system disk protection. SQLite snapshots contain personal data and credential hashes; protect them as private backups. JSON exports omit credential hashes. Memory text is context, not permission to execute a remembered command.
 
-localStorage is not an encrypted credential store. Use synthetic data in this prototype. API keys and execution grants stay outside shared memory. UI switches record configuration intent; a real service must enforce access and sync policies.
-
-LAN sharing starts disabled. The fixed pairing code `246810` is for the visible demonstration only. It is not an authentication mechanism for a real service.
+Legacy browser prototype exports can be imported explicitly. Browser data is never silently promoted to confirmed facts. See [SECURITY.md](SECURITY.md) and [Getting started](docs/getting-started.md).
 
 ## Repository map
 
 ```text
-src/                            React interface, styles, and sample data
-skills/shared-memory-console/   Portable design skill and page contract
-docs/                           Quickstart, design, integration, and validation
-  images/                       Browser screenshots
-scripts/                        Release packaging
-.github/                        Build workflow and issue forms
+server/                         HTTP/TLS service and SQLite business rules
+bin/                            Shared client, CLI, and MCP stdio bridge
+src/                            Chinese administration interface
+skills/                         Runtime memory skill and interface design skill
+test/                           Real storage, API, CLI, MCP, and TLS integration tests
+docs/                           Plan, setup, contracts, validation, and screenshots
+scripts/                        Development launcher and release packaging
 LICENSES/                       Third-party license texts
-LICENSE                         Apache License 2.0
-NOTICE                          Copyright and attribution
 ```
 
-## Contributing and support
+## Contributing
 
-Focused fixes, clear reproductions, and documentation improvements are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), follow the [Code of Conduct](CODE_OF_CONDUCT.md), and use [GitHub Issues](https://github.com/KarmenLoop/karmen-memory/issues) for ordinary questions. Follow [SECURITY.md](SECURITY.md) for sensitive findings.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPORT.md](SUPPORT.md), and the [Code of Conduct](CODE_OF_CONDUCT.md). Related projects: [KODER Shared Memory](https://github.com/KarmenLoop/koder-shared-memory) and [KODER Personal Knowledge](https://github.com/KarmenLoop/koder-personal-knowledge); each has its own scope and license.
 
-Related KarmenLoop projects: [KODER Shared Memory](https://github.com/KarmenLoop/koder-shared-memory) and [KODER Personal Knowledge](https://github.com/KarmenLoop/koder-personal-knowledge). Each has its own scope and license; this console does not automatically integrate either project.
-
-## License and attribution
-
-First-party files are available under the [Apache License 2.0](LICENSE). React, React DOM, Lucide, and Manrope retain their respective licenses. See [NOTICE](NOTICE) and [Third-party notices](THIRD_PARTY_NOTICES.md).
-
-Tool names identify intended integrations. Their inclusion does not imply endorsement, affiliation, or a verified connection.
+First-party files are licensed under [Apache 2.0](LICENSE). React, React DOM, Lucide, and Manrope retain their respective licenses; see [NOTICE](NOTICE) and [Third-party notices](THIRD_PARTY_NOTICES.md). Tool names identify integration targets and do not imply endorsement or a verified connection.
 
 Copyright 2026 KarmenLoop.

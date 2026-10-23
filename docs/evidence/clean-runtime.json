@@ -1,0 +1,8 @@
+{
+  "staticAssets": 2,
+  "createRetrieveSameId": true,
+  "actualProcessRestart": true,
+  "persistentFact": true,
+  "runtimeVersion": "0.2.0",
+  "result": "PASS"
+}

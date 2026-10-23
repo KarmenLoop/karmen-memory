@@ -1,39 +1,36 @@
 # Getting started
 
-## Run the console
+Use Node 22.16+, npm, and OpenSSL for optional LAN setup. Run `npm ci`, `npm run build`, then `npm start`. Open `http://127.0.0.1:4318`. Development uses `npm run dev -- --port 5186`, with the same service on 4318.
 
-Install Node.js 22.12 or newer, clone the repository, and run:
+## First fact and second client
 
-```sh
-npm ci
-npm run dev -- --port 5186 --strictPort
-```
+1. Create a memory with title, fact, type, exact project, evidence, and local/shared scope. The saved record gets an ID and revision 1.
+2. Edit it. The current record advances to revision 2 and the prior snapshot remains in its history. Archive/restore changes retrieval visibility rather than deleting it.
+3. Open Retrieval and search words from the fact. Check the ID, source, project, matched terms, and revision in the context.
+4. In Agent access create a read-only credential for that project. Save its one-time token privately and point `KARMEN_MEMORY_TOKEN_FILE` at it. Run the [CLI or MCP bridge](integration.md), then compare the same ID.
+5. A read/write credential can propose or extract candidates. Review them in Extraction before they participate in retrieval. Review can edit their scope or replace a same-project old fact while preserving its history.
 
-Open `http://127.0.0.1:5186`. The preview binds to loopback. A different free port can be supplied with `--port`.
+Project names match exactly. A credential scoped to one project cannot read a different project's facts or general facts. Use `*` only when all-project access is intended. A credential request is an observed request, not proof of installed host integration.
 
-## Try a memory
+## Storage and backup
 
-1. Open the memory library and add a short fact with a type, project, and sharing scope.
-2. Search for its title, edit it, and reload the page.
-3. Favorite the fact, archive it, and find it under the archive tab.
-4. Restore it when you want it available to the demonstration retrieval again.
+The default private data directory is `~/.karmen-memory`. Set `KARMEN_MEMORY_HOME` before startup to use another directory. Keep one service process per directory and use local storage, not a network-mounted SQLite file.
 
-The current browser stores these changes. Another browser profile or a different origin has its own storage.
+Settings offers:
 
-## Review and retrieve
+- **JSON export:** current facts and evidence, including archived facts. Credentials and full revision history are excluded.
+- **JSON import:** validates the entire envelope before a transaction, skips identical bodies within a project, and assigns new IDs. Files are limited to 2 MB and 5,000 records. v0.1.0 prototype exports are accepted; inspect synthetic records before confirming.
+- **SQLite snapshot:** a consistent database backup, also saved under the data directory's `backups/`. It contains facts, candidates, complete revisions, audit, evaluation samples, settings, and credential hashes. Treat it as private data.
 
-The candidate page includes ordinary proposals and a scope conflict. Review the evidence, accept or exclude a proposal, or keep both statements with an explicit scope. The example retrieval page uses local keyword matching and shows the selected context. It does not contact a model or embedding service.
+To restore a full snapshot:
 
-## Explore tools and devices
+1. Stop the service and verify that it has exited.
+2. Move the existing data directory to a dated private backup location. This preserves the database and any WAL/SHM files together; do not discard a live WAL.
+3. Create a new private data directory and copy the desired snapshot to `memory.sqlite`, with mode `0600` on Unix.
+4. Start with `KARMEN_MEMORY_HOME` pointing to the new directory. Inspect facts, revisions, and access settings before re-enabling LAN. A backup may contain hashes of previously valid credentials; revoke access that should no longer remain valid.
 
-Koder, Koder CLI, and Cursor lead the tool page and picker. The configuration drawer saves simulated access settings. It does not write to those tools' real configuration files.
+JSON import is additive and is not an exact full-database restore. Moving an older application over a newer database is not a supported schema downgrade.
 
-LAN sharing starts disabled. In the demonstration, enable it before adding a device. The fixed code `246810` creates a simulated device; an incorrect code produces a visible error. No actual network pairing occurs.
+## Offline behavior and limits
 
-## Export, import, and reset
-
-Export opens a reviewable JSON preview. Copy the JSON or request a browser download. If the browser does not save a file, use the copy path. File-download completion was not confirmed in the original in-app-browser check.
-
-Import accepts the prototype schema, at most 500 records, and files up to 1 MB. It adds records with new local IDs while preserving validated archive state, source, revision, and associated fields. This is additive import, not a replace-all restore.
-
-Settings can restore the initial sample data after a confirmation. Export your own changes first if you want to keep them. Do not put personal data or credentials into this prototype.
+Local facts, lexical retrieval, rule extraction, review, and backup work without internet access. LAN clients need the primary service available; this release has no offline replica. No model or paid API is called. Native installed-host behavior, physical-device LAN use, Mac packaging, Windows runtime, semantic accuracy, and token savings require separate validation.

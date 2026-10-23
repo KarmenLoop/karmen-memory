@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package the committed source, portable skill, and built static preview."""
+"""Package the committed source, portable skills, and prebuilt local runtime."""
 
 import hashlib
 import json
@@ -38,32 +38,35 @@ def main():
     source = target / f'karmen-memory-{version}-source.zip'
     add_files(source, [(ROOT / name, f'karmen-memory/{name}') for name in tracked if name])
 
-    skill_root = ROOT / 'skills/shared-memory-console'
-    skill = target / f'shared-memory-console-{version}.skill.zip'
-    add_files(skill, [(path, f'shared-memory-console/{path.relative_to(skill_root).as_posix()}')
-                      for path in skill_root.rglob('*') if path.is_file()])
+    artifacts = [source]
+    for skill_root in sorted((ROOT / 'skills').iterdir()):
+        if not (skill_root / 'SKILL.md').is_file():
+            continue
+        skill = target / f'{skill_root.name}-{version}.skill.zip'
+        add_files(skill, [(path, f'{skill_root.name}/{path.relative_to(skill_root).as_posix()}')
+                         for path in skill_root.rglob('*') if path.is_file()])
+        artifacts.append(skill)
 
-    prefix = 'karmen-memory-preview/'
-    preview_entries = [(path, prefix + path.relative_to(ROOT / 'dist').as_posix())
-                       for path in (ROOT / 'dist').rglob('*') if path.is_file()]
-    preview_entries.extend((ROOT / name, prefix + name)
-                           for name in ['LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md'])
-    preview_entries.extend((path, prefix + path.relative_to(ROOT).as_posix())
-                           for path in (ROOT / 'LICENSES').glob('*') if path.is_file())
-    preview_entries.append((ROOT / 'docs/preview.md', prefix + 'PREVIEW.md'))
-    preview = target / f'karmen-memory-{version}-preview.zip'
-    add_files(preview, preview_entries)
+    prefix = 'karmen-memory/'
+    runtime_entries = [(ROOT / name, prefix + name) for name in tracked if name]
+    runtime_entries.extend((path, prefix + 'dist/' + path.relative_to(ROOT / 'dist').as_posix())
+                           for path in (ROOT / 'dist').rglob('*') if path.is_file())
+    runtime = target / f'karmen-memory-{version}-runtime.zip'
+    add_files(runtime, runtime_entries)
+    artifacts.append(runtime)
 
-    artifacts = [source, skill, preview]
     sums = ''.join(f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n'
                    for path in artifacts)
     (target / 'SHA256SUMS').write_text(sums)
     (target / 'build-info.json').write_text(json.dumps({
         'version': version,
         'commit': commit,
-        'status': 'prerelease-prototype',
+        'status': 'local-alpha',
         'artifacts': [path.name for path in artifacts],
-        'liveAdapters': False,
+        'cliAndMcp': True,
+        'sqliteService': True,
+        'authenticatedHttpsSharing': True,
+        'nativeHostAcceptance': False,
         'lanSynchronization': False,
     }, indent=2) + '\n')
     print(json.dumps({'version': version, 'commit': commit,

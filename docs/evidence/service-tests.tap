@@ -1,0 +1,144 @@
+
+> @karmenloop/karmen-memory@0.2.0 test
+> node --test test/*.test.mjs
+
+TAP version 13
+# (node:18822) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real SQLite service, owner console, scoped clients, CLI, MCP, and TLS sharing
+    # Subtest: starts empty with zero simulated data and private database files
+    ok 1 - starts empty with zero simulated data and private database files
+      ---
+      duration_ms: 6.35725
+      type: 'test'
+      ...
+    # Subtest: owner endpoints reject anonymous, CSRF, and foreign origins
+    ok 2 - owner endpoints reject anonymous, CSRF, and foreign origins
+      ---
+      duration_ms: 21.146667
+      type: 'test'
+      ...
+    # Subtest: creates a fact and immutable revision; stale edits fail without modifying it
+    ok 3 - creates a fact and immutable revision; stale edits fail without modifying it
+      ---
+      duration_ms: 19.056666
+      type: 'test'
+      ...
+    # Subtest: issues independently scoped credentials and enforces read-only/project/CI restrictions
+    ok 4 - issues independently scoped credentials and enforces read-only/project/CI restrictions
+      ---
+      duration_ms: 38.528625
+      type: 'test'
+      ...
+    # Subtest: independent client retrieves the approved ID and cannot retrieve other projects
+    ok 5 - independent client retrieves the approved ID and cannot retrieve other projects
+      ---
+      duration_ms: 5.9185
+      type: 'test'
+      ...
+    # Subtest: tool proposals are durable review candidates and repeated keys do not duplicate writes
+    ok 6 - tool proposals are durable review candidates and repeated keys do not duplicate writes
+      ---
+      duration_ms: 11.188875
+      type: 'test'
+      ...
+    # Subtest: reviewed candidate becomes visible; repeated review conflicts
+    ok 7 - reviewed candidate becomes visible; repeated review conflicts
+      ---
+      duration_ms: 8.326958
+      type: 'test'
+      ...
+    # Subtest: extraction persists explicit sentence evidence and removes duplicates
+    ok 8 - extraction persists explicit sentence evidence and removes duplicates
+      ---
+      duration_ms: 6.227958
+      type: 'test'
+      ...
+    # Subtest: superseding a fact archives the prior revision and retains a traceable relationship
+    ok 9 - superseding a fact archives the prior revision and retains a traceable relationship
+      ---
+      duration_ms: 10.921916
+      type: 'test'
+      ...
+    # Subtest: archive, restore, favorite and source updates remain durable
+    ok 10 - archive, restore, favorite and source updates remain durable
+      ---
+      duration_ms: 7.790625
+      type: 'test'
+      ...
+    # Subtest: invalid import is rejected before any changes; valid restore uses new IDs and deduplicates
+    ok 11 - invalid import is rejected before any changes; valid restore uses new IDs and deduplicates
+      ---
+      duration_ms: 30.24175
+      type: 'test'
+      ...
+    # Subtest: feedback is scoped and invalid evaluation figures are rejected
+    ok 12 - feedback is scoped and invalid evaluation figures are rejected
+      ---
+      duration_ms: 11.745125
+      type: 'test'
+      ...
+    # Subtest: CI policy applies to existing credentials and paused/revoked credentials stop immediately
+    ok 13 - CI policy applies to existing credentials and paused/revoked credentials stop immediately
+      ---
+      duration_ms: 24.020625
+      type: 'test'
+      ...
+    # Subtest: real CLI gets the same ID and exits nonzero on unauthorized write
+    ok 14 - real CLI gets the same ID and exits nonzero on unauthorized write
+      ---
+      duration_ms: 157.224459
+      type: 'test'
+      ...
+    # Subtest: MCP stdio initializes, lists tools, searches same database, and reports tool errors
+    ok 15 - MCP stdio initializes, lists tools, searches same database, and reports tool errors
+      ---
+      duration_ms: 80.250416
+      type: 'test'
+      ...
+    # Subtest: HTTPS listener creates a verifiable certificate and requires pairing
+    ok 16 - HTTPS listener creates a verifiable certificate and requires pairing
+      ---
+      duration_ms: 106.267584
+      type: 'test'
+      ...
+    # Subtest: TLS device cannot see local-only facts, other projects, or owner APIs; code locks after five attempts
+    ok 17 - TLS device cannot see local-only facts, other projects, or owner APIs; code locks after five attempts
+      ---
+      duration_ms: 24.679542
+      type: 'test'
+      ...
+# (node:18822) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+    # Subtest: pairing expires, and real pairing CLI saves a private profile without overwriting it
+    ok 18 - pairing expires, and real pairing CLI saves a private profile without overwriting it
+      ---
+      duration_ms: 235.542666
+      type: 'test'
+      ...
+    # Subtest: SQLite snapshot is a readable consistent database with history and audit
+    ok 19 - SQLite snapshot is a readable consistent database with history and audit
+      ---
+      duration_ms: 8.10775
+      type: 'test'
+      ...
+    # Subtest: service restart preserves facts, revisions, credentials, settings, candidates and audit
+    ok 20 - service restart preserves facts, revisions, credentials, settings, candidates and audit
+      ---
+      duration_ms: 16.666375
+      type: 'test'
+      ...
+    1..20
+ok 1 - real SQLite service, owner console, scoped clients, CLI, MCP, and TLS sharing
+  ---
+  duration_ms: 867.937292
+  type: 'test'
+  ...
+1..1
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 962.238875
