@@ -13,3 +13,5 @@ Loading and connection failures have a retry entry. Server errors remain visible
 Extraction and retrieval state their actual methods. Evaluation separates observed lexical query metrics from user-recorded task samples. The total token comparison includes context, extraction, indexing, and retrieval; no savings number appears without samples.
 
 See [Implementation plan](implementation-plan.md) for the page-to-contract map, [Integration](integration.md) for permissions, and [Validation](validation.md) for actual evidence.
+
+The [v0.1.1 capture](images/overview-desktop-v0.1.1.png) is retained as historical prototype evidence. The README uses the current service-backed capture.

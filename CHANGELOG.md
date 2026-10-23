@@ -15,6 +15,12 @@ Local service alpha.
 
 Installed native hosts, physical two-computer acceptance, offline replication, semantic models, native installers, and measured model savings remain outside the verified alpha.
 
+## 0.1.1 — 2026-10-23
+
+- Added English and Simplified Chinese setup guides and versioned browser captures.
+- Retained bilingual entry pages and documentation in the prebuilt preview.
+- Kept the console labeled as a browser prototype with simulated adapters.
+
 ## 0.1.0 — 2026-10-22
 
 Initial public prerelease.

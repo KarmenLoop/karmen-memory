@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "kind": "actual service-backed browser capture",
+  "data": "synthetic acceptance records created through the UI",
+  "image": "docs/images/overview-desktop.png",
+  "sha256": "f9bd4a6c39bfc695d9a576466ede97231828c528d02b17870fde18a60da58011",
+  "pixels": [
+    65536,
+    4292542531
+  ],
+  "edits": "none",
+  "source_files": {
+    "package.json": "761405dea4d0ab83a317adde7e22bb6d26fa0ffa5cff1d9680f5f31577262b7e",
+    "package-lock.json": "0019e418b18b00aa71b152009fb566cebd99b19ab128ef7cca9af25bbc926ee9",
+    "src/main.jsx": "7fd2769d1fac903e68105b826d304acefb02d5ee3894384208272545277d6b92",
+    "src/catalog.js": "f671aab00eca02eb63e38722c0360272cccb334e8f5118d1354f2e3187c93ca5",
+    "src/api.js": "02d5e135ae7efe35b90b89a323136de7678491faae526de1625b7b9d172032f2",
+    "src/style.css": "363f516a918290964acc72f13b76f3842e5915a1fdf44554a7045950b7b26320",
+    "src/workbench.css": "1514082d38a62d6d79cbb26934d8aaf58dbad7f0606e096c7ad833a821688d21",
+    "src/service.css": "3b290834f2adce2461d01ea029bb2debc574197966cb5b36a609bd45ab765352"
+  }
+}

@@ -1,12 +1,14 @@
 # KARMEN Memory
 
+English | [简体中文](README.zh-CN.md)
+
 A local SQLite memory service and administration console for sharing confirmed personal context across agent tools.
 
 [![Build](https://github.com/KarmenLoop/karmen-memory/actions/workflows/verify.yml/badge.svg)](https://github.com/KarmenLoop/karmen-memory/actions/workflows/verify.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-39704e)](LICENSE)
 [![Status: Local alpha](https://img.shields.io/badge/status-local%20alpha-64748b)](#project-status)
 
-[Quickstart](#quickstart) · [CLI and MCP](docs/integration.md) · [Skills](#skills) · [Validation](docs/validation.md) · [Security](SECURITY.md) · [Downloads](https://github.com/KarmenLoop/karmen-memory/releases)
+[User guide](docs/tutorial.en.md) · [Quickstart](#quickstart) · [CLI and MCP](docs/integration.md) · [Skills](#skills) · [Validation](docs/validation.md) · [Security](SECURITY.md) · [Downloads](https://github.com/KarmenLoop/karmen-memory/releases)
 
 ![The local memory console, with Koder, Koder CLI, and Cursor first](docs/images/overview-desktop.png)
 
