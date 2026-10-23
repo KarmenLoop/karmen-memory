@@ -106,7 +106,7 @@ Check an existing installation before replacing it. A skill describes use of an 
 
 ## Project status
 
-Version 0.2.0 is a **local alpha**. The previous v0.1.0 release remains a historical browser prototype.
+Version 0.3.0 is a **local alpha**. Version 0.2.0 introduced the local service; v0.1.0 remains a historical browser prototype.
 
 | Area | Current evidence |
 | --- | --- |
