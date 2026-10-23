@@ -32,3 +32,13 @@ test('a paired device cannot overwrite or delete a local fact by reusing its ID'
  for(const status of ['active','deleted'])await assert.rejects(request(url,'/v1/replica/sync',{method:'POST',token:peer.token,certificate,body:{records:[{...injected,status}]}}),{status:403,code:'SCOPE_CONFLICT'});
  assert.equal(a.service.store.one('facts',local.id).body,'Private local fact');assert.equal(a.service.store.one('facts',local.id).scope,'仅本机');
 });
+test('large valid Unicode records cross the real request limit in bounded batches',async t=>{
+ const a=await fixture(t),b=await fixture(t);await a.call('/lan',{enabled:true},'POST',201);
+ a.service.store.tx(()=>{for(let i=0;i<60;i++)a.service.store.createFact({...fact('字'.repeat(6000)),title:'Large record '+i,provenance:'据'.repeat(6000)});});
+ const ticket=await a.call('/replication/pairing',{project:'Acceptance'}),peer=await b.call('/replication/pair',{url:`https://127.0.0.1:${a.service.lanInfo().port}`,certificate:readFileSync(join(a.dir,'lan-cert.pem'),'utf8'),code:ticket.code,name:'Large-record receiver'});await b.call('/replication/peers/'+peer.id+'/sync',{});assert.equal(b.service.store.all('facts').length,60);assert(b.service.store.all('facts').every(f=>f.body.length===6000));
+});
+test('a persisted push cursor continues a backlog instead of resending the same first batch',async t=>{
+ const a=await fixture(t),b=await fixture(t);await a.call('/lan',{enabled:true},'POST',201);
+ b.service.store.tx(()=>{for(let i=0;i<260;i++)b.service.store.createFact({...fact('Backlog item '+i),title:'Backlog '+i});});
+ const ticket=await a.call('/replication/pairing',{project:'Acceptance'}),peer=await b.call('/replication/pair',{url:`https://127.0.0.1:${a.service.lanInfo().port}`,certificate:readFileSync(join(a.dir,'lan-cert.pem'),'utf8'),code:ticket.code,name:'Backlog sender'});const first=await b.call('/replication/peers/'+peer.id+'/sync',{});assert.equal(first.more,true);const cursor=b.service.replicas.log.peers().find(p=>p.id===peer.id).pushCursor;assert(cursor>0);await b.call('/replication/peers/'+peer.id+'/sync',{});assert.equal(a.service.store.all('facts').length,260);assert(b.service.replicas.log.peers().find(p=>p.id===peer.id).pushCursor>cursor);
+});
