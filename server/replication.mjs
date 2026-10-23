@@ -22,8 +22,8 @@ export function replication(primary,directory){
    log.put(record,'Primary store');log.setting('primary:'+f.id,fingerprint(f));
   }
  });}
- function apply(){
-  for(const m of log.all()){
+ function apply(records){
+  for(const m of records){
    const found=primary.db.prepare('SELECT data FROM facts WHERE id=?').get(m.id),current=found?JSON.parse(found.data):null;
    if(m.status==='deleted'){
     if(current){primary.db.prepare('DELETE FROM revisions WHERE fact_id=?').run(m.id);primary.db.prepare('DELETE FROM facts WHERE id=?').run(m.id);}
@@ -39,9 +39,9 @@ export function replication(primary,directory){
   fail(typeof incoming?.id==='string','INVALID_RECORD','A record ID is required.');
   const found=primary.db.prepare('SELECT data FROM facts WHERE id=?').get(incoming.id),current=found?JSON.parse(found.data):null;
   fail(!current||(current.scope==='全设备'&&current.project===incoming.project),'SCOPE_CONFLICT','A replica cannot overwrite a local record or another project.',403);
-  const result=merge(incoming,actor);apply();return result;
+  const result=merge(incoming,actor);apply([result.record]);return result;
  });
- const resolve=log.resolve.bind(log);log.resolve=(...args)=>primary.tx(()=>{const result=resolve(...args);apply();return result;});
+ const resolve=log.resolve.bind(log);log.resolve=(...args)=>primary.tx(()=>{const result=resolve(...args);apply([result]);return result;});
  primary.replicationGuard=(old,value)=>{
   if(!log.setting('published:'+old.id))return;
   if((value.scope??old.scope)!==old.scope||(value.project??old.project)!==old.project)fail(false,'SHARED_SCOPE_FIXED','Delete the replicated record and create a new record to change its project or scope.',409);
@@ -50,7 +50,6 @@ export function replication(primary,directory){
  function state(){capture();return {nodeId:log.nodeId,peers:log.peers().map(({token,certificate,...p})=>({...p,fingerprint:certificate?certificateInfo(certificate).fingerprint:null})),conflicts:log.conflicts(),shared:primary.all('facts').filter(f=>f.scope==='全设备')};}
  async function sync(id){
   fail(!closing&&!busy.has(id),'SYNC_BUSY','The service is stopping or this peer is already synchronizing.',409);capture();const peer=log.peers().find(p=>p.id===id);fail(peer,'NOT_FOUND','Peer not found.',404);
-  for(const m of log.all())if(log.allowed({role:'sync',projects:peer.projects},m.project))log.setting('published:'+m.id,true);
   const controller=new AbortController();const operation=synchronize(log,peer,controller.signal);busy.set(id,{controller,operation});
   try{return await operation;}finally{busy.delete(id);}
  }
@@ -72,7 +71,7 @@ export function replication(primary,directory){
   const conflict=/^\/api\/replication\/conflicts\/([a-zA-Z0-9-]+)$/.exec(path);if(conflict&&method==='POST')return log.resolve(conflict[1],input.choice,owner);
   const memory=/^\/api\/replication\/memories\/([a-zA-Z0-9-]+)$/.exec(path);
   if(memory&&method==='DELETE')return primary.tx(()=>{
-   const m=primary.one('facts',memory[1]);fail(m.revision===input.revision,'REVISION_CONFLICT','Reload this record before deleting it.',409);capture();const wire=log.get(m.id);log.remove(m.id,wire.revision,owner);apply();return {ok:true};
+   const m=primary.one('facts',memory[1]);fail(m.revision===input.revision,'REVISION_CONFLICT','Reload this record before deleting it.',409);capture();const wire=log.get(m.id);const deleted=log.remove(m.id,wire.revision,owner);apply([deleted]);return {ok:true};
   });
   fail(false,'NOT_FOUND','Synchronization endpoint not found.',404);
  }
@@ -80,11 +79,11 @@ export function replication(primary,directory){
   fail(https,'HTTPS_REQUIRED','Replication requires the LAN HTTPS listener.',403);
   if(path==='/v1/replica/pair'&&method==='POST')return log.pair(input.code,input.name,input.nodeId);
   const actor=log.authenticate(headers.authorization?.startsWith('Bearer ')?headers.authorization.slice(7):null);fail(actor?.role==='sync','UNAUTHORIZED','A paired replication credential is required.',401);
-  capture();for(const m of log.all())if(m.scope==='shared'&&log.allowed(actor,m.project))log.setting('published:'+m.id,true);
+  capture();
   const activity=()=>{for(const p of log.peers())if(p.credentialId===actor.id){p.lastSyncAt=new Date().toISOString();log.savePeer(p);}};
-  if(path==='/v1/replica/sync'&&method==='GET'){const page=log.feed(actor,Number(input.after||0));activity();return page;}
+  if(path==='/v1/replica/sync'&&method==='GET'){const page=log.feed(actor,Number(input.after||0),25);for(const m of page.records)log.setting('published:'+m.id,true);activity();return page;}
   if(path==='/v1/replica/sync'&&method==='POST'){
-   fail(Array.isArray(input.records)&&input.records.length<=100,'INVALID_BATCH','Send at most 100 records.');return primary.tx(()=>{const result={outcomes:input.records.map(m=>log.merge(m,actor))};activity();return result;});
+   fail(Array.isArray(input.records)&&input.records.length<=100,'INVALID_BATCH','Send at most 100 records.');return primary.tx(()=>{const result={outcomes:input.records.map(m=>{const {status,record}=log.merge(m,actor);log.setting('published:'+record.id,true);return {status,record};})};activity();return result;});
   }
   fail(false,'NOT_FOUND','Replication endpoint not found.',404);
  }

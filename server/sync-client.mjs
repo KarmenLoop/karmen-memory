@@ -48,15 +48,20 @@ export async function synchronize(store, peer, signal) {
   const options = { token: peer.token, certificate: peer.certificate, signal };
   let received = 0, conflicts = 0, sent = 0;
   try {
-    const records = store.all().filter(m => m.scope === 'shared' && m.status !== 'pending' && store.allowed(actor, m.project));
-    for (let i = 0; i < records.length; i += 100) {
-      const value = await request(peer.url, '/v1/replica/sync', { ...options, method: 'POST', body: { records: records.slice(i, i + 100) } });
-      fail(Array.isArray(value.outcomes) && value.outcomes.length <= 100, 'INVALID_SYNC_RESPONSE', 'Invalid synchronization response.');
-      store.tx(() => { for (const item of value.outcomes) { const result = store.merge(item.record, actor); conflicts += result.status === 'conflict' ? 1 : 0; } });
-      sent += records.slice(i, i + 100).length;
+    let pushMore = true, pushes = 0;
+    while (pushMore && pushes++ < 10) {
+      const page = store.feed(actor, peer.pushCursor || 0, 25);
+      for (const m of page.records) store.setting('published:' + m.id, true);
+      const value = await request(peer.url, '/v1/replica/sync', { ...options, method: 'POST', body: { records: page.records } });
+      fail(Array.isArray(value.outcomes) && value.outcomes.length <= 25, 'INVALID_SYNC_RESPONSE', 'Invalid synchronization response.');
+      store.tx(() => {
+        for (const item of value.outcomes) { const result = store.merge(item.record, actor); conflicts += result.status === 'conflict' ? 1 : 0; }
+        peer.pushCursor = page.cursor; store.savePeer(peer);
+      });
+      sent += page.records.length; pushMore = page.more;
     }
     let more = true, pages = 0;
-    while (more && pages++ < 100) {
+    while (more && pages++ < 10) {
       const page = await request(peer.url, `/v1/replica/sync?after=${peer.cursor || 0}`, options);
       fail(Array.isArray(page.records) && page.records.length <= 100 && Number.isSafeInteger(page.cursor) && page.cursor >= (peer.cursor || 0), 'INVALID_SYNC_RESPONSE', 'Invalid synchronization cursor.');
       store.tx(() => {
@@ -65,8 +70,8 @@ export async function synchronize(store, peer, signal) {
       });
       more = page.more === true;
     }
-    peer.lastSyncAt = new Date().toISOString(); peer.lastError = null; peer.failures = 0; peer.nextAttemptAt = Date.now() + 10000;
-    store.savePeer(peer); return { sent, received, conflicts, more, lastSyncAt: peer.lastSyncAt };
+    peer.queued = more || pushMore; peer.lastSyncAt = new Date().toISOString(); peer.lastError = null; peer.failures = 0; peer.nextAttemptAt = Date.now() + 10000;
+    store.savePeer(peer); return { sent, received, conflicts, more: peer.queued, lastSyncAt: peer.lastSyncAt };
   } catch (error) {
     peer.lastError = error.message; peer.failures = (peer.failures || 0) + 1; peer.nextAttemptAt = Date.now() + Math.min(60000, 5000 * 2 ** Math.min(peer.failures, 4));
     store.savePeer(peer); throw error;
